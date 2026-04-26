@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mr. Interviewer — AI Mock Interview Coach</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  /* =========================================================
+     MR. INTERVIEWER — Modern Dark Mode + Neumorphic 3D Soft
+     ========================================================= */
+  :root {
+    --bg:        #1a1d24;
+    --bg-soft:   #1e2128;
+    --bg-darker: #14161b;
+    --shadow-d:  #0e1014;
+    --shadow-l:  #262a33;
+    --accent:    #5eead4;   /* electric teal */
+    --accent-2:  #818cf8;   /* indigo */
+    --accent-3:  #f472b6;   /* pink */
+    --text:      #e2e8f0;
+    --text-dim:  #94a3b8;
+    --danger:    #ef4444;
+    --success:   #22c55e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Animated background blobs */
+  .bg-orbs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .bg-orbs::before, .bg-orbs::after {
+    content: ''; position: absolute; width: 600px; height: 600px;
+    border-radius: 50%; filter: blur(120px); opacity: 0.18;
+    animation: float 18s ease-in-out infinite;
+  }
+  .bg-orbs::before { background: var(--accent); top: -200px; left: -200px; }
+  .bg-orbs::after  { background: var(--accent-2); bottom: -200px; right: -200px; animation-delay: -9s; }
+  @keyframes float {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50%      { transform: translate(80px,60px) scale(1.15); }
+  }
+
+  /* ---------- Neumorphic primitives ---------- */
+  .neu {
+    background: var(--bg-soft);
+    border-radius: 22px;
+    box-shadow: 8px 8px 20px var(--shadow-d), -8px -8px 20px var(--shadow-l);
+  }
+  .neu-inset {
+    background: var(--bg-soft);
+    border-radius: 18px;
+    box-shadow: inset 6px 6px 14px var(--shadow-d), inset -6px -6px 14px var(--shadow-l);
+  }
+  .neu-btn {
+    background: var(--bg-soft);
+    border-radius: 14px;
+    border: none;
+    color: var(--text);
+    padding: 14px 26px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 6px 6px 14px var(--shadow-d), -6px -6px 14px var(--shadow-l);
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  .neu-btn:hover { transform: translateY(-2px); color: var(--accent); }
+  .neu-btn:active {
+    box-shadow: inset 4px 4px 10px var(--shadow-d), inset -4px -4px 10px var(--shadow-l);
+    transform: translateY(0);
+  }
+  .neu-btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b0d12;
+    box-shadow: 6px 6px 14px var(--shadow-d), -6px -6px 14px var(--shadow-l), 0 0 24px rgba(94,234,212,0.25);
+  }
+  .neu-btn.primary:hover { color: #0b0d12; box-shadow: 6px 6px 14px var(--shadow-d), -6px -6px 14px var(--shadow-l), 0 0 36px rgba(94,234,212,0.5); }
+
+  /* ---------- Layout ---------- */
+  .app {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 800; font-size: 20px; letter-spacing: -0.3px;
+  }
+  .logo-mark {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: #0b0d12; font-weight: 900;
+    box-shadow: 4px 4px 10px var(--shadow-d), -4px -4px 10px var(--shadow-l);
+  }
+  .logo-text span { background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .stepper { display: flex; gap: 8px; align-items: center; }
+  .step-dot {
+    width: 28px; height: 6px; border-radius: 3px;
+    background: var(--bg-darker);
+    box-shadow: inset 2px 2px 4px var(--shadow-d), inset -2px -2px 4px var(--shadow-l);
+    transition: all 0.3s ease;
+  }
+  .step-dot.active { background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 56px; box-shadow: 0 0 12px rgba(94,234,212,0.4); }
+  .step-dot.done { background: var(--accent); }
+
+  /* ---------- Screens ---------- */
+  .screen { display: none; animation: fadeUp 0.5s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Hero */
+  .hero { text-align: center; padding: 60px 20px; }
+  .hero h1 {
+    font-size: clamp(38px, 6vw, 68px); font-weight: 900; letter-spacing: -1.5px;
+    margin-bottom: 18px; line-height: 1.05;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-size: 200% 200%; animation: shimmer 8s ease infinite;
+  }
+  @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  .hero p { font-size: 18px; color: var(--text-dim); max-width: 620px; margin: 0 auto 36px; line-height: 1.6; }
+  .features-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+    gap: 18px; margin-top: 48px;
+  }
+  .feature-card { padding: 24px; text-align: left; }
+  .feature-card .ico {
+    width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+    background: var(--bg-soft); margin-bottom: 14px; font-size: 22px;
+    box-shadow: inset 3px 3px 8px var(--shadow-d), inset -3px -3px 8px var(--shadow-l);
+  }
+  .feature-card h3 { font-size: 16px; margin-bottom: 6px; }
+  .feature-card p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+
+  /* Section header */
+  .section-header { text-align: center; margin-bottom: 36px; }
+  .section-header h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px; }
+  .section-header p { color: var(--text-dim); font-size: 15px; }
+
+  /* Industry grid */
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+  .pick-card {
+    padding: 26px; cursor: pointer; transition: all 0.3s cubic-bezier(.2,.9,.3,1.3);
+    position: relative; overflow: hidden;
+  }
+  .pick-card:hover { transform: translateY(-6px) scale(1.02); }
+  .pick-card.selected {
+    box-shadow: 8px 8px 20px var(--shadow-d), -8px -8px 20px var(--shadow-l), inset 0 0 0 2px var(--accent);
+  }
+  .pick-card .emoji { font-size: 38px; display: block; margin-bottom: 12px; }
+  .pick-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .pick-card p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .pick-card .role-count {
+    position: absolute; top: 18px; right: 18px;
+    font-size: 11px; padding: 4px 10px; border-radius: 10px;
+    background: var(--bg-darker); color: var(--accent);
+    box-shadow: inset 2px 2px 4px var(--shadow-d), inset -2px -2px 4px var(--shadow-l);
+  }
+
+  /* Companies showcase */
+  .companies-banner {
+    margin-top: 28px; padding: 24px 20px; border-radius: 20px;
+    background: linear-gradient(135deg, rgba(94,234,212,0.05), rgba(129,140,248,0.05));
+    box-shadow: inset 4px 4px 10px var(--shadow-d), inset -4px -4px 10px var(--shadow-l);
+    text-align: center;
+    animation: fadeUp 0.5s ease;
+  }
+  .companies-banner .label {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin-bottom: 14px;
+  }
+  .companies-row {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; margin-top: 8px;
+  }
+  .company-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 14px;
+    background: var(--bg-soft); font-weight: 700; font-size: 14px;
+    box-shadow: 4px 4px 10px var(--shadow-d), -4px -4px 10px var(--shadow-l);
+    animation: pulseIn 0.6s ease backwards;
+  }
+  .company-chip:nth-child(1) { animation-delay: 0.05s; }
+  .company-chip:nth-child(2) { animation-delay: 0.15s; }
+  .company-chip:nth-child(3) { animation-delay: 0.25s; }
+  .company-chip:nth-child(4) { animation-delay: 0.35s; }
+  .company-chip:nth-child(5) { animation-delay: 0.45s; }
+  @keyframes pulseIn { from { opacity: 0; transform: translateY(10px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .company-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  /* Roles list */
+  .roles-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 14px; }
+  .role-item {
+    padding: 18px 20px; cursor: pointer; transition: all 0.25s ease;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .role-item:hover { transform: translateX(4px); color: var(--accent); }
+  .role-item.selected { box-shadow: 8px 8px 20px var(--shadow-d), -8px -8px 20px var(--shadow-l), inset 0 0 0 2px var(--accent); }
+  .role-icon {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    font-size: 18px; flex-shrink: 0;
+    background: var(--bg-soft);
+    box-shadow: inset 3px 3px 6px var(--shadow-d), inset -3px -3px 6px var(--shadow-l);
+  }
+  .role-item h4 { font-size: 15px; font-weight: 700; }
+  .role-item p { font-size: 12px; color: var(--text-dim); }
+
+  /* Experience selector */
+  .exp-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; max-width: 760px; margin: 0 auto; }
+  .exp-card {
+    padding: 20px; text-align: center; cursor: pointer;
+    transition: all 0.25s ease; position: relative;
+  }
+  .exp-card:hover { transform: translateY(-3px); }
+  .exp-card.selected {
+    background: linear-gradient(135deg, rgba(94,234,212,0.12), rgba(129,140,248,0.10));
+    box-shadow: 8px 8px 20px var(--shadow-d), -8px -8px 20px var(--shadow-l),
+                inset 0 0 0 2px var(--accent), 0 0 24px rgba(94,234,212,0.25);
+  }
+  .exp-card.selected h4 { color: var(--accent); }
+  .exp-card.selected::after {
+    content: '✓'; position: absolute; top: 10px; right: 12px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: #0b0d12;
+    font-size: 13px; font-weight: 900;
+    display: grid; place-items: center;
+    box-shadow: 0 0 12px rgba(94,234,212,0.6);
+  }
+  .exp-card .level-num { font-size: 28px; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
+  /* Same upgrade for industry + role selected states for consistency */
+  .pick-card.selected h3, .role-item.selected h4 { color: var(--accent); }
+  .pick-card.selected, .role-item.selected {
+    background: linear-gradient(135deg, rgba(94,234,212,0.10), rgba(129,140,248,0.08));
+  }
+
+  /* Resume upload */
+  .resume-wrap { max-width: 720px; margin: 0 auto; }
+  .drop-zone {
+    padding: 56px 24px; text-align: center; cursor: pointer;
+    border: 2px dashed var(--text-dim);
+    border-radius: 22px;
+    background: var(--bg-soft);
+    box-shadow: inset 4px 4px 10px var(--shadow-d), inset -4px -4px 10px var(--shadow-l);
+    transition: all 0.3s ease;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent); background: rgba(94,234,212,0.04);
+    box-shadow: inset 4px 4px 10px var(--shadow-d), inset -4px -4px 10px var(--shadow-l), 0 0 24px rgba(94,234,212,0.2);
+  }
+  .drop-zone .upload-ico { font-size: 48px; margin-bottom: 14px; display: block; }
+  .drop-zone h3 { font-size: 18px; margin-bottom: 6px; }
+  .drop-zone p { color: var(--text-dim); font-size: 13px; }
+  .keywords-display {
+    margin-top: 24px; padding: 24px; min-height: 80px;
+    display: none;
+  }
+  .keywords-display.active { display: block; animation: fadeUp 0.4s ease; }
+  .keywords-display h4 { font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .keyword-chip {
+    display: inline-block; margin: 4px;
+    padding: 7px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(94,234,212,0.15), rgba(129,140,248,0.15));
+    color: var(--accent); font-size: 13px; font-weight: 600;
+    border: 1px solid rgba(94,234,212,0.25);
+    animation: pulseIn 0.4s ease backwards;
+  }
+  .resume-actions { margin-top: 24px; display: flex; gap: 12px; justify-content: center; align-items: center; }
+  .skip-link {
+    color: var(--text-dim); font-size: 13px; cursor: pointer;
+    text-decoration: underline; text-decoration-color: transparent;
+    transition: text-decoration-color 0.2s ease;
+  }
+  .skip-link:hover { text-decoration-color: var(--text-dim); }
+  .encourage-banner {
+    margin-bottom: 18px; padding: 14px 18px; border-radius: 14px;
+    background: rgba(94,234,212,0.08); border-left: 3px solid var(--accent);
+    color: var(--text); font-size: 13px; line-height: 1.5;
+  }
+  .encourage-banner b { color: var(--accent); }
+
+  /* Interview screen */
+  .interview-layout {
+    display: grid; grid-template-columns: 1fr; gap: 22px;
+  }
+  .interviewer-stage {
+    padding: 32px; text-align: center; position: relative;
+  }
+  .avatar-orb {
+    width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 18px;
+    background: radial-gradient(circle at 35% 30%, var(--accent), var(--accent-2) 60%, var(--bg-darker) 100%);
+    box-shadow: 0 0 60px rgba(94,234,212,0.4), inset -10px -10px 30px rgba(0,0,0,0.4);
+    position: relative;
+    animation: idle 4s ease-in-out infinite;
+  }
+  .avatar-orb.speaking {
+    animation: speak 0.6s ease-in-out infinite;
+  }
+  @keyframes idle  { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  @keyframes speak { 0%,100% { transform: scale(1); box-shadow: 0 0 60px rgba(94,234,212,0.4), inset -10px -10px 30px rgba(0,0,0,0.4); }
+                     50%     { transform: scale(1.08); box-shadow: 0 0 90px rgba(94,234,212,0.7), inset -10px -10px 30px rgba(0,0,0,0.4); } }
+  .avatar-rings { position: absolute; inset: -20px; border-radius: 50%; pointer-events: none; }
+  .avatar-rings::before, .avatar-rings::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid var(--accent); opacity: 0;
+  }
+  .avatar-orb.speaking + .avatar-rings::before { animation: ripple 1.4s ease-out infinite; }
+  .avatar-orb.speaking + .avatar-rings::after  { animation: ripple 1.4s ease-out infinite 0.7s; }
+  @keyframes ripple { 0% { transform: scale(0.9); opacity: 0.6; } 100% { transform: scale(1.5); opacity: 0; } }
+
+  .interviewer-name { font-weight: 700; font-size: 18px; margin-bottom: 4px; }
+  .interviewer-status { color: var(--text-dim); font-size: 13px; }
+  .timer {
+    position: absolute; top: 24px; right: 24px;
+    padding: 8px 14px; border-radius: 10px;
+    background: var(--bg-darker); color: var(--accent);
+    font-family: 'SF Mono', monospace; font-weight: 700; font-size: 14px;
+    box-shadow: inset 2px 2px 6px var(--shadow-d), inset -2px -2px 6px var(--shadow-l);
+  }
+
+  /* Chat area */
+  .chat-area { padding: 24px; max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .chat-area::-webkit-scrollbar { width: 6px; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--shadow-l); border-radius: 3px; }
+
+  .bubble {
+    max-width: 78%; padding: 14px 18px; border-radius: 18px;
+    font-size: 14px; line-height: 1.55;
+    animation: bubbleIn 0.4s ease;
+  }
+  @keyframes bubbleIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .bubble.ai {
+    align-self: flex-start;
+    background: var(--bg-soft);
+    box-shadow: 4px 4px 10px var(--shadow-d), -4px -4px 10px var(--shadow-l);
+    border-bottom-left-radius: 6px;
+  }
+  .bubble.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b0d12; font-weight: 600;
+    border-bottom-right-radius: 6px;
+    box-shadow: 4px 4px 10px var(--shadow-d), 0 0 20px rgba(94,234,212,0.2);
+  }
+  .bubble .label { font-size: 11px; opacity: 0.7; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.5px; }
+  .typing { display: inline-flex; gap: 4px; padding: 4px 0; }
+  .typing span { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); animation: typing 1.2s ease-in-out infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+
+  /* Input */
+  .input-area { padding: 14px; display: flex; gap: 12px; align-items: flex-end; }
+  .input-area textarea {
+    flex: 1; resize: none; border: none; outline: none;
+    background: var(--bg-soft); color: var(--text);
+    border-radius: 14px; padding: 14px 16px;
+    font-family: inherit; font-size: 14px; line-height: 1.5;
+    min-height: 52px; max-height: 160px;
+    box-shadow: inset 4px 4px 10px var(--shadow-d), inset -4px -4px 10px var(--shadow-l);
+  }
+  .input-area textarea:focus { box-shadow: inset 4px 4px 10px var(--shadow-d), inset -4px -4px 10px var(--shadow-l), 0 0 0 2px var(--accent); }
+  .input-area textarea.shake {
+    box-shadow: inset 4px 4px 10px var(--shadow-d), inset -4px -4px 10px var(--shadow-l), 0 0 0 2px var(--danger);
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); } 40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
+  }
+  .input-hint {
+    position: absolute; bottom: 6px; left: 18px;
+    font-size: 12px; color: var(--danger); opacity: 0;
+    pointer-events: none; transition: opacity 0.2s ease;
+  }
+  .input-hint.visible { opacity: 1; }
+  .input-area-wrap { position: relative; }
+
+  /* Feedback screen */
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 18px; margin-bottom: 28px; }
+  .score-card { padding: 24px; text-align: center; }
+  .score-card h4 { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .score-gauge {
+    width: 100px; height: 100px; margin: 0 auto 12px;
+    border-radius: 50%; display: grid; place-items: center;
+    background: var(--bg-soft);
+    box-shadow: inset 6px 6px 14px var(--shadow-d), inset -6px -6px 14px var(--shadow-l);
+    position: relative;
+  }
+  .score-gauge .num { font-size: 28px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .feedback-block { padding: 24px; margin-bottom: 18px; }
+  .feedback-block h4 { font-size: 14px; color: var(--accent); margin-bottom: 8px; letter-spacing: 0.5px; }
+  .feedback-block p { font-size: 14px; line-height: 1.6; color: var(--text); }
+  .qa-row { padding: 18px; margin-bottom: 12px; border-left: 3px solid var(--accent); border-radius: 0 14px 14px 0; background: var(--bg-soft); box-shadow: 4px 4px 10px var(--shadow-d), -4px -4px 10px var(--shadow-l); }
+  .qa-row .q { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .qa-row .a { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; line-height: 1.5; }
+  .qa-row .fb { font-size: 13px; color: var(--accent); }
+  .qa-row .rating-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 8px;
+    background: var(--bg-darker); color: var(--accent);
+    font-size: 12px; font-weight: 700; margin-left: 8px;
+  }
+
+  .nav-actions { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+  /* Utilities */
+  .hidden { display: none !important; }
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 38px; }
+    .topbar { flex-direction: column; gap: 16px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+
+<div class="app">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-mark">M</div>
+      <div class="logo-text">Mr. <span>Interviewer</span></div>
+    </div>
+    <div class="stepper" id="stepper">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 1: HERO ============ -->
+  <div class="screen active" id="screen-hero">
+    <div class="hero">
+      <h1>Ace your next <span>interview</span><br/>with an AI that<br/>actually listens.</h1>
+      <p>Practice realistic mock interviews tailored to your industry, role, and resume. Get scored on technical depth, problem-solving, communication, and behavioral fit.</p>
+      <button class="neu-btn primary" onclick="goTo('industry')">Start Mock Interview →</button>
+
+      <div class="features-grid">
+        <div class="neu feature-card">
+          <div class="ico">🎯</div>
+          <h3>Industry-Tuned</h3>
+          <p>9 industries, 30+ roles, hundreds of golden-standard questions.</p>
+        </div>
+        <div class="neu feature-card">
+          <div class="ico">📄</div>
+          <h3>Resume-Aware</h3>
+          <p>Drop your resume — we'll personalize follow-ups around your real experience.</p>
+        </div>
+        <div class="neu feature-card">
+          <div class="ico">🤖</div>
+          <h3>Live AI Interviewer</h3>
+          <p>Conversational follow-ups simulate a real recruiter pressure-testing your answers.</p>
+        </div>
+        <div class="neu feature-card">
+          <div class="ico">📊</div>
+          <h3>4-Dimension Scoring</h3>
+          <p>Technical, problem-solving, communication, and behavioral fit — scored every session.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 2: INDUSTRY ============ -->
+  <div class="screen" id="screen-industry">
+    <div class="section-header">
+      <h2>Pick your <span style="background: linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">industry</span></h2>
+      <p>We'll tailor every question, follow-up, and scoring rubric to your field.</p>
+    </div>
+    <div class="grid-3" id="industry-grid"></div>
+    <div id="companies-banner-slot"></div>
+    <div class="nav-actions">
+      <button class="neu-btn" onclick="goTo('hero')">← Back</button>
+      <button class="neu-btn primary" id="btn-industry-next" disabled onclick="goTo('role')">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 3: ROLE ============ -->
+  <div class="screen" id="screen-role">
+    <div class="section-header">
+      <h2>Which <span style="background: linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">role</span> are you prepping for?</h2>
+      <p id="role-sub">Select the position you're interviewing for.</p>
+    </div>
+    <div class="roles-list" id="roles-list"></div>
+    <div class="nav-actions">
+      <button class="neu-btn" onclick="goTo('industry')">← Back</button>
+      <button class="neu-btn primary" id="btn-role-next" disabled onclick="goTo('experience')">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 4: EXPERIENCE ============ -->
+  <div class="screen" id="screen-experience">
+    <div class="section-header">
+      <h2>What's your <span style="background: linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">experience</span> level?</h2>
+      <p>This sets the difficulty and depth of follow-up questions.</p>
+    </div>
+    <div class="exp-row" id="exp-row">
+      <div class="neu exp-card" data-level="student"><div class="level-num">01</div><h4>Student</h4><p style="color:var(--text-dim); font-size:12px; margin-top:4px;">Internship-level</p></div>
+      <div class="neu exp-card" data-level="new_grad"><div class="level-num">02</div><h4>New Grad</h4><p style="color:var(--text-dim); font-size:12px; margin-top:4px;">0–1 yrs</p></div>
+      <div class="neu exp-card" data-level="mid"><div class="level-num">03</div><h4>Mid-Level</h4><p style="color:var(--text-dim); font-size:12px; margin-top:4px;">2–5 yrs</p></div>
+      <div class="neu exp-card" data-level="senior"><div class="level-num">04</div><h4>Senior</h4><p style="color:var(--text-dim); font-size:12px; margin-top:4px;">6+ yrs</p></div>
+    </div>
+    <div class="nav-actions">
+      <button class="neu-btn" onclick="goTo('role')">← Back</button>
+      <button class="neu-btn primary" id="btn-exp-next" disabled onclick="goTo('resume')">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 5: RESUME ============ -->
+  <div class="screen" id="screen-resume">
+    <div class="section-header">
+      <h2>Drop your <span style="background: linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">resume</span></h2>
+      <p>Optional — but highly recommended for personalized questions.</p>
+    </div>
+    <div class="resume-wrap">
+      <div class="encourage-banner">
+        💡 <b>Tip:</b> Uploading your resume lets the AI ask you about the projects, tools, and companies <em>you actually wrote down</em>. It's the difference between a generic mock and one that feels like a real interview.
+      </div>
+      <div class="drop-zone" id="drop-zone">
+        <span class="upload-ico">📂</span>
+        <h3>Drag & drop your resume here</h3>
+        <p>PDF or .txt — or click to browse. We never store your resume.</p>
+        <input type="file" id="file-input" accept=".pdf,.txt" hidden />
+      </div>
+      <div class="neu keywords-display" id="keywords-display">
+        <h4>🔍 Keywords detected</h4>
+        <div id="keyword-chips"></div>
+      </div>
+      <div class="resume-actions">
+        <button class="neu-btn primary" id="btn-resume-next" onclick="startInterview()">Start Interview →</button>
+        <span class="skip-link" onclick="startInterview(true)">Skip — use generic questions</span>
+      </div>
+      <div class="nav-actions" style="margin-top:14px;">
+        <button class="neu-btn" onclick="goTo('experience')">← Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 6: INTERVIEW ============ -->
+  <div class="screen" id="screen-interview">
+    <div class="interview-layout">
+      <div class="neu interviewer-stage">
+        <div class="timer" id="timer">00:00</div>
+        <div class="avatar-orb" id="avatar"></div>
+        <div class="avatar-rings"></div>
+        <div class="interviewer-name">Mr. Interviewer</div>
+        <div class="interviewer-status" id="ai-status">Preparing your questions…</div>
+      </div>
+
+      <div class="neu">
+        <div class="chat-area" id="chat-area"></div>
+        <div class="input-area input-area-wrap">
+          <textarea id="user-input" placeholder="Type your answer… (Shift+Enter for new line)"></textarea>
+          <button class="neu-btn primary" onclick="sendAnswer()" id="btn-send">Send</button>
+          <span class="input-hint" id="input-hint">Type something before sending.</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="neu-btn" onclick="endInterviewEarly()">End Interview & See Feedback</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 7: FEEDBACK ============ -->
+  <div class="screen" id="screen-feedback">
+    <div class="section-header">
+      <h2>Your <span style="background: linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">scorecard</span></h2>
+      <p id="feedback-sub">Here's how you did.</p>
+    </div>
+    <div class="score-grid" id="score-grid"></div>
+    <div class="neu feedback-block" id="overall-feedback"></div>
+    <h3 style="margin: 28px 0 14px; font-size: 18px;">Question-by-question breakdown</h3>
+    <div id="qa-breakdown"></div>
+    <div class="nav-actions">
+      <button class="neu-btn" onclick="resetAll()">← New Interview</button>
+      <button class="neu-btn primary" onclick="goTo('feedback')">Save Session</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   DATA — Industries, Roles, Companies, Question Banks
+   ========================================================= */
+const INDUSTRIES = [
+  { id:1, key:'tech', emoji:'💻', name:'Technology (Software / AI / IT)', desc:'SWE, Data/ML, PM, Cybersecurity',
+    companies:[{n:'Google',c:'#4285F4'},{n:'Apple',c:'#a3a3a3'},{n:'Microsoft',c:'#00a4ef'}] },
+  { id:2, key:'finance', emoji:'🏦', name:'Finance & Consulting', desc:'IB, Consulting, Quant, Financial Analyst',
+    companies:[{n:'Goldman Sachs',c:'#7399c6'},{n:'McKinsey & Company',c:'#1f3864'},{n:'JPMorgan Chase',c:'#0066b2'}] },
+  { id:3, key:'health', emoji:'🏥', name:'Healthcare & Life Sciences', desc:'Clinical, Pharma, Public Health, Biotech',
+    companies:[{n:'Pfizer',c:'#0093d0'},{n:'Johnson & Johnson',c:'#cc0033'},{n:'Moderna',c:'#ff0050'}] },
+  { id:4, key:'eng', emoji:'⚙️', name:'Engineering (Non-Software)', desc:'Mech, Civil, Electrical, Aerospace',
+    companies:[{n:'Tesla',c:'#cc0000'},{n:'Boeing',c:'#0033a0'},{n:'General Electric',c:'#005eb8'}] },
+  { id:5, key:'biz', emoji:'🛍️', name:'Business, Marketing & Sales', desc:'Marketing, Sales, Growth, Brand',
+    companies:[{n:'Procter & Gamble',c:'#003da5'},{n:'Nike',c:'#ff6600'},{n:'Coca-Cola',c:'#f40009'}] },
+  { id:6, key:'media', emoji:'🎬', name:'Media, Design & Creative', desc:'UI/UX, Graphic, Video, Game Dev',
+    companies:[{n:'Netflix',c:'#e50914'},{n:'Disney',c:'#0033a0'},{n:'Adobe',c:'#ff0000'}] },
+  { id:7, key:'ops', emoji:'🚚', name:'Operations, Supply Chain & Logistics', desc:'Ops Mgr, SC Analyst, Logistics',
+    companies:[{n:'Amazon',c:'#ff9900'},{n:'FedEx',c:'#660099'},{n:'UPS',c:'#8b6f3f'}] },
+  { id:8, key:'gov', emoji:'⚖️', name:'Government, Law & Public Sector', desc:'Lawyer, Policy, Public Admin',
+    companies:[{n:'U.S. Department of Justice',c:'#1f3864'},{n:'United Nations',c:'#5b92e5'},{n:'Government of Canada',c:'#d52b1e'}] },
+  { id:9, key:'energy', emoji:'🌱', name:'Energy & Environment', desc:'Energy Analyst, Env Eng, Sustainability',
+    companies:[{n:'ExxonMobil',c:'#cc0000'},{n:'NextEra Energy',c:'#0066b3'},{n:'Shell',c:'#fbce07'}] }
+];
+
+const ROLES = {
+  tech: [
+    { id:101, name:'Software Engineer', icon:'⌨️', desc:'DSA, system design, clean code' },
+    { id:102, name:'Data Scientist / ML Engineer', icon:'📈', desc:'Stats, ML, SQL, modeling' },
+    { id:103, name:'Product Manager', icon:'📐', desc:'Product sense, execution, behavioral' },
+    { id:104, name:'Cybersecurity Analyst', icon:'🛡️', desc:'Threats, networking, breach response' }
+  ],
+  finance: [
+    { id:201, name:'Investment Banking Analyst', icon:'💼', desc:'Valuation, accounting, DCF' },
+    { id:202, name:'Management Consultant', icon:'📊', desc:'Case interviews, structured thinking' },
+    { id:203, name:'Financial Analyst', icon:'📑', desc:'Modeling, forecasting, reporting' },
+    { id:204, name:'Quantitative Analyst', icon:'🧮', desc:'Math, probability, Python/C++' }
+  ],
+  health: [
+    { id:301, name:'Physician / Clinical', icon:'🩺', desc:'Patient cases, ethics' },
+    { id:302, name:'Pharmaceutical Researcher', icon:'💊', desc:'Experimental design, drug dev' },
+    { id:303, name:'Public Health Analyst', icon:'📉', desc:'Epidemiology, policy, data' },
+    { id:304, name:'Biotech Scientist', icon:'🧬', desc:'Lab methods, research design' }
+  ],
+  eng: [
+    { id:401, name:'Mechanical Engineer', icon:'🔩', desc:'Thermo, mechanics, CAD' },
+    { id:402, name:'Civil Engineer', icon:'🏗️', desc:'Structures, materials, code' },
+    { id:403, name:'Electrical Engineer', icon:'⚡', desc:'Circuits, signals, power' },
+    { id:404, name:'Aerospace Engineer', icon:'✈️', desc:'Aero, propulsion, control' }
+  ],
+  biz: [
+    { id:501, name:'Marketing Manager', icon:'📣', desc:'Strategy, campaigns, brand' },
+    { id:502, name:'Sales Representative', icon:'🤝', desc:'Pipeline, closing, objections' },
+    { id:503, name:'Growth / Performance Marketer', icon:'🚀', desc:'CAC, LTV, paid + organic' },
+    { id:504, name:'Brand Manager', icon:'🎨', desc:'Positioning, identity, launch' }
+  ],
+  media: [
+    { id:601, name:'UI/UX Designer', icon:'🖌️', desc:'Portfolio, design thinking' },
+    { id:602, name:'Graphic Designer', icon:'🎭', desc:'Visual systems, branding' },
+    { id:603, name:'Video Editor', icon:'🎞️', desc:'Pacing, storytelling, software' },
+    { id:604, name:'Game Developer', icon:'🎮', desc:'Engines, mechanics, optimization' }
+  ],
+  ops: [
+    { id:701, name:'Operations Manager', icon:'📦', desc:'Process, throughput, KPIs' },
+    { id:702, name:'Supply Chain Analyst', icon:'🔗', desc:'Demand, inventory, modeling' },
+    { id:703, name:'Logistics Coordinator', icon:'📍', desc:'Routing, vendors, scheduling' }
+  ],
+  gov: [
+    { id:801, name:'Lawyer', icon:'⚖️', desc:'Case analysis, argumentation' },
+    { id:802, name:'Policy Analyst', icon:'📜', desc:'Research, writing, briefings' },
+    { id:803, name:'Public Administrator', icon:'🏛️', desc:'Operations, stakeholders' }
+  ],
+  energy: [
+    { id:901, name:'Energy Analyst', icon:'🔋', desc:'Markets, grid, forecasting' },
+    { id:902, name:'Environmental Engineer', icon:'🌍', desc:'Compliance, water, air' },
+    { id:903, name:'Sustainability Consultant', icon:'♻️', desc:'ESG, carbon, strategy' }
+  ]
+};
+
+/* Question banks per role — sampled "golden standard" questions */
+const QUESTIONS = {
+  101: [ // SWE
+    { q:"To get started — walk me through your background and what's drawing you toward this role.", cat:'behavioral' },
+    { q:"Given an array of integers, find two numbers that sum to a target. Walk me through your approach, then optimize it.", cat:'technical' },
+    { q:"Design a URL shortener like bit.ly. Cover the high-level architecture, key components, and one tradeoff you'd debate.", cat:'system_design' },
+    { q:"Tell me about a time you disagreed with a teammate on a technical decision. How did it resolve?", cat:'behavioral' },
+    { q:"How would you debug a production service that suddenly started returning 500s for 5% of requests?", cat:'technical' }
+  ],
+  102: [ // DS/ML
+    { q:"Tell me about your favorite ML project — what problem were you solving and why did you pick the model you used?", cat:'behavioral' },
+    { q:"Explain bias-variance tradeoff like I'm a smart PM with no ML background.", cat:'technical' },
+    { q:"You're given a dataset where 99% of labels are 'no fraud'. How do you build and evaluate a fraud classifier?", cat:'case' },
+    { q:"Write a SQL query to find the top-3 highest-paid employees per department.", cat:'technical' },
+    { q:"A model performs great in offline eval but poorly in production. Walk me through how you'd diagnose.", cat:'case' }
+  ],
+  103: [ // PM
+    { q:"Why product management, and why now in your career?", cat:'behavioral' },
+    { q:"Design a product to help college students manage their mental health.", cat:'product_sense' },
+    { q:"You're the PM for YouTube. What's the single metric you'd most want to move, and why?", cat:'execution' },
+    { q:"Tell me about a time you had to ship something with significant ambiguity. How did you navigate it?", cat:'behavioral' },
+    { q:"How would you decide whether to add dark mode to a B2B SaaS product?", cat:'product_sense' }
+  ],
+  104: [ // Cyber
+    { q:"Walk me through how you'd approach threat-modeling a new internal HR application.", cat:'technical' },
+    { q:"You see unusual outbound traffic from a finance VP's laptop at 3am. What's your first 60 minutes?", cat:'case' },
+    { q:"Explain the difference between symmetric and asymmetric encryption — and where you'd use each.", cat:'technical' },
+    { q:"Tell me about a time you had to convince a non-technical leader to invest in security.", cat:'behavioral' }
+  ],
+  201: [ // IB
+    { q:"Walk me through a DCF.", cat:'technical' },
+    { q:"Why investment banking, and why our firm specifically?", cat:'behavioral' },
+    { q:"If a company issues $100M of debt to buy back stock, how does that flow through the three statements?", cat:'technical' },
+    { q:"Tell me about a time you handled extreme pressure and a tight deadline.", cat:'behavioral' }
+  ],
+  202: [ // Consulting
+    { q:"Estimate the number of piano tuners in Chicago.", cat:'case' },
+    { q:"Our client is a regional grocery chain with declining margins. How do you diagnose the problem?", cat:'case' },
+    { q:"Why consulting, and why this firm?", cat:'behavioral' },
+    { q:"Tell me about a time you led a team through ambiguity.", cat:'behavioral' }
+  ],
+  203: [ // FA
+    { q:"Walk me through how you'd build a 3-statement model for a SaaS company.", cat:'technical' },
+    { q:"What's the difference between EBITDA and free cash flow?", cat:'technical' },
+    { q:"How would you forecast revenue for a product launching in a brand-new market?", cat:'case' }
+  ],
+  204: [ // Quant
+    { q:"You flip a fair coin until you get two heads in a row. What's the expected number of flips?", cat:'brainteaser' },
+    { q:"Implement a function that returns the running median of a stream of numbers.", cat:'technical' },
+    { q:"Explain the Black-Scholes intuition without the math.", cat:'technical' }
+  ],
+  301: [
+    { q:"A 58-year-old comes in with chest pain radiating to the left arm. Walk me through your differential and first steps.", cat:'case' },
+    { q:"Tell me about a time you had to deliver difficult news to a patient or family.", cat:'behavioral' },
+    { q:"A patient refuses a recommended treatment. How do you handle it?", cat:'ethics' }
+  ],
+  302: [
+    { q:"Walk me through how you'd design a phase-2 trial for a new oncology drug.", cat:'technical' },
+    { q:"Tell me about your most impactful research project to date.", cat:'behavioral' },
+    { q:"How do you handle conflicting results between two studies?", cat:'case' }
+  ],
+  303: [
+    { q:"Cases of a respiratory illness are spiking 3x in a city. What's your first move?", cat:'case' },
+    { q:"How do you communicate uncertain epidemiological data to the public without causing panic?", cat:'communication' },
+    { q:"Walk me through a study design you've worked on.", cat:'behavioral' }
+  ],
+  304: [
+    { q:"Walk me through a CRISPR experiment you designed end-to-end.", cat:'technical' },
+    { q:"How do you decide which assay to use to validate a hypothesis?", cat:'technical' },
+    { q:"Tell me about a research setback and what you learned.", cat:'behavioral' }
+  ],
+  401: [
+    { q:"Walk me through the most challenging mechanical project you've worked on.", cat:'behavioral' },
+    { q:"How would you select between a belt drive and a chain drive for a new application?", cat:'technical' },
+    { q:"A part is failing prematurely in the field. How do you investigate?", cat:'case' }
+  ],
+  402: [
+    { q:"Walk me through how you'd approach designing a new pedestrian bridge over a highway.", cat:'technical' },
+    { q:"Tell me about a project where you balanced cost, safety, and timeline.", cat:'behavioral' },
+    { q:"How do you stay on top of evolving building codes?", cat:'communication' }
+  ],
+  403: [
+    { q:"Explain the difference between BJTs and MOSFETs and where each shines.", cat:'technical' },
+    { q:"Walk me through how you'd design a low-noise audio amplifier.", cat:'technical' },
+    { q:"Tell me about a debug story where the bug was electrical, not software.", cat:'behavioral' }
+  ],
+  404: [
+    { q:"Walk me through the lift equation and where each term matters most in design.", cat:'technical' },
+    { q:"How do you trade weight, cost, and reliability when designing a propulsion system?", cat:'case' },
+    { q:"Tell me about your favorite aerospace project.", cat:'behavioral' }
+  ],
+  501: [
+    { q:"Walk me through a marketing campaign you led from idea to results.", cat:'behavioral' },
+    { q:"How would you launch a new energy drink targeting Gen Z?", cat:'case' },
+    { q:"What metrics would you track for a brand-awareness campaign?", cat:'technical' }
+  ],
+  502: [
+    { q:"Walk me through your sales process from a cold lead to a closed deal.", cat:'behavioral' },
+    { q:"A prospect says 'your product is too expensive.' How do you respond?", cat:'case' },
+    { q:"Tell me about your toughest sale and how you closed it.", cat:'behavioral' }
+  ],
+  503: [
+    { q:"How do you decide where to spend an additional $100k of paid budget?", cat:'case' },
+    { q:"Walk me through a growth experiment you ran end-to-end.", cat:'behavioral' },
+    { q:"What's the relationship between CAC, LTV, and payback period — and why does it matter?", cat:'technical' }
+  ],
+  504: [
+    { q:"How would you reposition a legacy brand losing relevance with younger consumers?", cat:'case' },
+    { q:"Walk me through a brand identity project you owned.", cat:'behavioral' },
+    { q:"What makes a brand 'iconic' in your view?", cat:'communication' }
+  ],
+  601: [
+    { q:"Walk me through a case study from your portfolio — any project you're most proud of.", cat:'behavioral' },
+    { q:"A user says 'I just don't get this screen.' How do you investigate?", cat:'case' },
+    { q:"How do you balance accessibility with visual design ambition?", cat:'communication' }
+  ],
+  602: [
+    { q:"Walk me through your design process for a brand identity brief.", cat:'behavioral' },
+    { q:"How do you handle feedback that you fundamentally disagree with?", cat:'communication' },
+    { q:"What's a recent design trend you find genuinely useful — and one that's overhyped?", cat:'case' }
+  ],
+  603: [
+    { q:"Walk me through your editing process for a 60-second social spot.", cat:'behavioral' },
+    { q:"How do you decide between a hard cut and a transition?", cat:'technical' },
+    { q:"Tell me about an edit that was saved by the music or sound design.", cat:'behavioral' }
+  ],
+  604: [
+    { q:"Walk me through the most challenging gameplay system you've built.", cat:'behavioral' },
+    { q:"How do you optimize a scene that's hitting frame-rate issues?", cat:'technical' },
+    { q:"Pitch me a game concept in 90 seconds.", cat:'case' }
+  ],
+  701: [
+    { q:"Walk me through a process improvement you led — what was the before and after?", cat:'behavioral' },
+    { q:"A warehouse is missing 5% of orders. How do you investigate?", cat:'case' },
+    { q:"How do you balance throughput with quality?", cat:'communication' }
+  ],
+  702: [
+    { q:"Walk me through how you'd forecast demand for a new product launch.", cat:'technical' },
+    { q:"A key supplier just announced a 6-week delay. How do you respond?", cat:'case' },
+    { q:"Tell me about an analysis you ran that changed a business decision.", cat:'behavioral' }
+  ],
+  703: [
+    { q:"How do you handle a same-day route disruption?", cat:'case' },
+    { q:"Walk me through how you'd onboard a new carrier.", cat:'behavioral' },
+    { q:"What metrics tell you the network is healthy?", cat:'technical' }
+  ],
+  801: [
+    { q:"Walk me through a case you worked on and the legal reasoning involved.", cat:'case' },
+    { q:"How do you handle a client whose preferred strategy is legally risky?", cat:'ethics' },
+    { q:"Why this firm, and why now?", cat:'behavioral' }
+  ],
+  802: [
+    { q:"Walk me through a policy memo you've written.", cat:'behavioral' },
+    { q:"How would you analyze the tradeoffs of a new minimum-wage proposal?", cat:'case' },
+    { q:"How do you communicate complex policy to a non-expert audience?", cat:'communication' }
+  ],
+  803: [
+    { q:"Tell me about a public-sector program you helped run — what worked and what didn't?", cat:'behavioral' },
+    { q:"How do you align stakeholders who fundamentally disagree?", cat:'case' },
+    { q:"What does 'public service' mean to you?", cat:'behavioral' }
+  ],
+  901: [
+    { q:"Walk me through how energy markets price a megawatt-hour.", cat:'technical' },
+    { q:"How would you forecast natural gas demand next winter?", cat:'case' },
+    { q:"Tell me about an analysis you've done in the energy space.", cat:'behavioral' }
+  ],
+  902: [
+    { q:"Walk me through how you'd design a remediation plan for a contaminated site.", cat:'technical' },
+    { q:"How do you balance regulatory compliance with project timelines?", cat:'case' },
+    { q:"Tell me about a project where environmental impact drove the design.", cat:'behavioral' }
+  ],
+  903: [
+    { q:"How would you build a carbon-reduction roadmap for a mid-size manufacturer?", cat:'case' },
+    { q:"Walk me through your favorite ESG engagement.", cat:'behavioral' },
+    { q:"What's the most overrated and most underrated sustainability metric?", cat:'communication' }
+  ]
+};
+
+/* Common keywords by industry — for resume scanning + question personalization */
+const KEYWORD_BANK = {
+  tech: ['Python','JavaScript','React','Node','TypeScript','AWS','Docker','Kubernetes','SQL','PostgreSQL','MongoDB','Git','Linux','REST','GraphQL','TensorFlow','PyTorch','Pandas','NumPy','Spark','Kafka','Redis','CI/CD','microservices','machine learning','deep learning','NLP','computer vision','API','Java','Go','Rust','C++','Swift','Kotlin','iOS','Android','Figma','Agile','Scrum'],
+  finance: ['DCF','LBO','M&A','valuation','Excel','VBA','Bloomberg','Capital IQ','financial modeling','accounting','GAAP','equity research','fixed income','derivatives','risk management','Monte Carlo','SQL','Python','R','options','futures','portfolio'],
+  health: ['clinical trial','GCP','FDA','HIPAA','EHR','Epic','SAS','SPSS','R','biostatistics','epidemiology','pharmacology','oncology','cardiology','radiology','PCR','CRISPR','assay','flow cytometry','western blot','IRB'],
+  eng: ['CAD','SolidWorks','AutoCAD','MATLAB','ANSYS','FEA','CFD','GD&T','SPICE','PCB','signal processing','controls','thermodynamics','statics','dynamics','fluid mechanics','aerodynamics','propulsion'],
+  biz: ['SEO','SEM','Google Analytics','HubSpot','Salesforce','CRM','CAC','LTV','ROAS','A/B testing','Meta Ads','LinkedIn Ads','content marketing','brand strategy','market research','positioning'],
+  media: ['Figma','Sketch','Adobe XD','Photoshop','Illustrator','InDesign','Premiere','After Effects','DaVinci','Final Cut','Unity','Unreal','Blender','Maya','C#','typography','color theory','wireframing','prototyping','user research'],
+  ops: ['Lean','Six Sigma','Kaizen','SAP','Oracle','Tableau','Power BI','SQL','Excel','demand planning','inventory','procurement','logistics','warehousing','ERP','WMS','TMS','forecasting'],
+  gov: ['policy analysis','legal research','Westlaw','LexisNexis','litigation','contract law','regulatory','public policy','stakeholder','memo','briefing','statute','compliance'],
+  energy: ['SCADA','grid','renewables','solar','wind','battery','storage','LCOE','PPA','GIS','GHG','Scope 1','Scope 2','Scope 3','ESG','carbon','sustainability','LEED','EPA']
+};
+
+/* =========================================================
+   STATE + NAVIGATION
+   ========================================================= */
+const SCREENS = ['hero','industry','role','experience','resume','interview','feedback'];
+const state = {
+  industry: null,
+  role: null,
+  experience: null,
+  resumeText: '',
+  keywords: [],
+  questions: [],
+  responses: [],
+  currentQ: 0,
+  startTime: null,
+  timerInt: null
+};
+
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  updateStepper(SCREENS.indexOf(screen));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Per-screen render hooks — run AFTER the screen is visible so DOM is ready.
+  // This replaces the old document-level click listener that caused a race condition.
+  switch (screen) {
+    case 'industry': renderIndustries(); break;
+    case 'role':     renderRoles();      break;
+    case 'resume':   focusResumeScreen(); break;
+  }
+}
+
+function updateStepper(idx) {
+  const dots = document.querySelectorAll('#stepper .step-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active','done');
+    if (i < idx) d.classList.add('done');
+    else if (i === idx) d.classList.add('active');
+  });
+}
+
+/* =========================================================
+   SCREEN 2 — Industry picker + Companies banner
+   ========================================================= */
+function renderIndustries() {
+  const grid = document.getElementById('industry-grid');
+  grid.innerHTML = INDUSTRIES.map(ind => `
+    <div class="neu pick-card" data-key="${ind.key}" onclick="selectIndustry('${ind.key}')">
+      <span class="role-count">${(ROLES[ind.key]||[]).length} roles</span>
+      <span class="emoji">${ind.emoji}</span>
+      <h3>${ind.name}</h3>
+      <p>${ind.desc}</p>
+    </div>
+  `).join('');
+}
+
+function selectIndustry(key) {
+  state.industry = INDUSTRIES.find(i => i.key === key);
+  document.querySelectorAll('#industry-grid .pick-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.key === key);
+  });
+  document.getElementById('btn-industry-next').disabled = false;
+  renderCompaniesBanner();
+}
+
+function renderCompaniesBanner() {
+  const slot = document.getElementById('companies-banner-slot');
+  if (!state.industry) return;
+  const cs = state.industry.companies;
+  slot.innerHTML = `
+    <div class="companies-banner" id="cb-${Date.now()}">
+      <div class="label">✨ Used to prep for companies like</div>
+      <div class="companies-row">
+        ${cs.map(c => `
+          <span class="company-chip">
+            <span class="company-dot" style="background:${c.c}; color:${c.c};"></span>
+            ${c.n}
+          </span>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   SCREEN 3 — Role picker
+   ========================================================= */
+function renderRoles() {
+  if (!state.industry) return;
+  const list = document.getElementById('roles-list');
+  document.getElementById('role-sub').textContent =
+    `Choose a ${state.industry.name} role — questions are tailored to its golden-standard interview.`;
+  list.innerHTML = ROLES[state.industry.key].map(r => `
+    <div class="neu role-item" data-id="${r.id}" onclick="selectRole(${r.id})">
+      <div class="role-icon">${r.icon}</div>
+      <div>
+        <h4>${r.name}</h4>
+        <p>${r.desc}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectRole(id) {
+  const role = ROLES[state.industry.key].find(r => r.id === id);
+  state.role = role;
+  document.querySelectorAll('#roles-list .role-item').forEach(c => {
+    c.classList.toggle('selected', Number(c.dataset.id) === id);
+  });
+  document.getElementById('btn-role-next').disabled = false;
+}
+
+/* =========================================================
+   SCREEN 4 — Experience
+   ========================================================= */
+document.querySelectorAll('#exp-row .exp-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('#exp-row .exp-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    state.experience = card.dataset.level;
+    document.getElementById('btn-exp-next').disabled = false;
+  });
+});
+
+/* =========================================================
+   SCREEN 5 — Resume upload + keyword scan
+   ========================================================= */
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+/* Focus the primary CTA so Enter-to-progress works. Called by goTo('resume'). */
+function focusResumeScreen() {
+  // Slight delay so the screen-fade animation doesn't steal focus.
+  setTimeout(() => document.getElementById('btn-resume-next')?.focus(), 250);
+}
+
+/* Page-level Enter handler for the resume screen — fires Start Interview
+   unless the user is typing in a real input/textarea or is mid-drag. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.shiftKey) return;
+  const resumeActive = document.getElementById('screen-resume').classList.contains('active');
+  if (!resumeActive) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  e.preventDefault();
+  startInterview(state.keywords.length === 0 && !state.resumeText);
+});
+
+dropZone.addEventListener('click', () => fileInput.click());
+['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => {
+  e.preventDefault(); dropZone.classList.add('dragover');
+}));
+['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+}));
+dropZone.addEventListener('drop', e => {
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+async function handleFile(file) {
+  document.querySelector('#drop-zone h3').textContent = `📄 ${file.name}`;
+  document.querySelector('#drop-zone p').textContent = 'Scanning for keywords…';
+  let text = '';
+  const isPdf = file.name.toLowerCase().endsWith('.pdf');
+
+  // Try PDF.js path first if it's a PDF and the library actually loaded.
+  // Falls back to plain-text reading if pdf.js is undefined (CDN blocked, ad-blocker, slow connection)
+  // or if the parse itself throws.
+  if (isPdf) {
+    try {
+      if (typeof pdfjsLib === 'undefined') {
+        throw new Error('pdfjsLib unavailable');
+      }
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(it => it.str).join(' ') + '\n';
+      }
+    } catch (err) {
+      console.warn('PDF.js failed, falling back to plain-text read:', err);
+      try {
+        // Best-effort fallback — strips most binary noise but recovers any embedded ASCII keywords.
+        text = await file.text();
+        text = text.replace(/[^\x20-\x7E\n]+/g, ' ');
+        document.querySelector('#drop-zone p').textContent =
+          '⚠️ PDF parser unavailable — using fallback scan. For best results, paste your resume as .txt.';
+      } catch (err2) {
+        document.querySelector('#drop-zone h3').textContent = 'Drag & drop your resume here';
+        document.querySelector('#drop-zone p').textContent =
+          '⚠️ Couldn\'t read this file. Try a .txt version, or click Skip below.';
+        return;
+      }
+    }
+  } else {
+    try {
+      text = await file.text();
+    } catch (err) {
+      document.querySelector('#drop-zone p').textContent =
+        '⚠️ Couldn\'t read this file. Try a .txt or .pdf, or click Skip below.';
+      return;
+    }
+  }
+
+  state.resumeText = text;
+  scanKeywords(text);
+  if (!document.querySelector('#drop-zone p').textContent.startsWith('⚠️')) {
+    document.querySelector('#drop-zone p').textContent = '✅ Resume scanned. Ready to interview.';
+  }
+}
+
+function scanKeywords(text) {
+  const lower = text.toLowerCase();
+  const bank = (KEYWORD_BANK[state.industry?.key] || []).concat(
+    Object.values(KEYWORD_BANK).flat()
+  );
+  const found = [...new Set(bank.filter(k => lower.includes(k.toLowerCase())))].slice(0, 24);
+  state.keywords = found;
+  const display = document.getElementById('keywords-display');
+  const chips = document.getElementById('keyword-chips');
+  if (found.length) {
+    chips.innerHTML = found.map((k,i) =>
+      `<span class="keyword-chip" style="animation-delay:${i*0.04}s">${k}</span>`
+    ).join('');
+    display.classList.add('active');
+  } else {
+    chips.innerHTML = '<span style="color:var(--text-dim); font-size:13px;">No common keywords detected — that\'s fine, we\'ll use the role\'s standard question bank.</span>';
+    display.classList.add('active');
+  }
+}
+
+/* =========================================================
+   SCREEN 6 — Live interview loop
+   ========================================================= */
+function startInterview(skipResume) {
+  if (skipResume) { state.resumeText = ''; state.keywords = []; }
+  // Build question list — start with warm-up, then mix in personalized resume question if keywords found
+  const baseQs = (QUESTIONS[state.role.id] || []).slice();
+  const final = [];
+  // 1. Warm-up
+  final.push(baseQs.find(q => q.cat==='behavioral') || baseQs[0]);
+  // 2. Resume-personalized question
+  if (state.keywords.length >= 2) {
+    const kw1 = state.keywords[0], kw2 = state.keywords[1];
+    final.push({
+      q: `I noticed you've worked with ${kw1} and ${kw2}. Pick the project where these mattered most and walk me through your specific contribution.`,
+      cat: 'personalized'
+    });
+  }
+  // 3. Core technical
+  baseQs.filter(q => q.cat !== 'behavioral' && !final.includes(q)).slice(0, 3).forEach(q => final.push(q));
+  // 4. Closing behavioral
+  const closing = baseQs.filter(q => q.cat === 'behavioral').slice(-1)[0];
+  if (closing && !final.includes(closing)) final.push(closing);
+
+  state.questions = final.slice(0, 5);
+  state.responses = [];
+  state.currentQ = 0;
+  state.startTime = Date.now();
+
+  goTo('interview');
+  startTimer();
+  document.getElementById('chat-area').innerHTML = '';
+  document.getElementById('user-input').value = '';
+  setTimeout(() => askNextQuestion(true), 500);
+}
+
+function startTimer() {
+  clearInterval(state.timerInt);
+  state.timerInt = setInterval(() => {
+    const s = Math.floor((Date.now() - state.startTime) / 1000);
+    const m = String(Math.floor(s/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    document.getElementById('timer').textContent = `${m}:${ss}`;
+  }, 1000);
+}
+
+function setSpeaking(on, status) {
+  document.getElementById('avatar').classList.toggle('speaking', on);
+  document.getElementById('ai-status').textContent = status || (on ? 'Speaking…' : 'Listening…');
+}
+
+function addBubble(text, who, opts={}) {
+  const area = document.getElementById('chat-area');
+  const b = document.createElement('div');
+  b.className = `bubble ${who}`;
+  if (opts.label) {
+    b.innerHTML = `<div class="label">${opts.label}</div>${text}`;
+  } else {
+    b.innerHTML = text;
+  }
+  area.appendChild(b);
+  area.scrollTop = area.scrollHeight;
+  return b;
+}
+
+function showTyping() {
+  const area = document.getElementById('chat-area');
+  const b = document.createElement('div');
+  b.className = 'bubble ai typing-bubble';
+  b.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+  area.appendChild(b);
+  area.scrollTop = area.scrollHeight;
+  return b;
+}
+
+async function askNextQuestion(isFirst) {
+  if (state.currentQ >= state.questions.length) {
+    finishInterview();
+    return;
+  }
+  setSpeaking(true, 'Asking question…');
+  const typing = showTyping();
+  await wait(900);
+  typing.remove();
+
+  let intro = '';
+  if (isFirst) {
+    intro = `Hi ${getFirstName()}! I'm Mr. Interviewer. We're doing a mock <b>${state.role.name}</b> interview at the <b>${labelExp(state.experience)}</b> level. Take your time — I'll ask 5 questions and give you scored feedback at the end.<br/><br/>Let's start.<br/><br/>`;
+  }
+  const q = state.questions[state.currentQ];
+  addBubble(`${intro}<b>Q${state.currentQ + 1}.</b> ${q.q}`, 'ai', { label: '🤖 Mr. Interviewer' });
+  setSpeaking(false);
+}
+
+function sendAnswer() {
+  const ta = document.getElementById('user-input');
+  const text = ta.value.trim();
+  if (!text) {
+    // Visual feedback: shake the textarea + show inline hint so the user knows the click registered.
+    const hint = document.getElementById('input-hint');
+    ta.classList.remove('shake');
+    void ta.offsetWidth;          // restart animation
+    ta.classList.add('shake');
+    hint.classList.add('visible');
+    ta.focus();
+    setTimeout(() => {
+      ta.classList.remove('shake');
+      hint.classList.remove('visible');
+    }, 1800);
+    return;
+  }
+  addBubble(text, 'user', { label: '🧑 You' });
+  ta.value = '';
+
+  // Score this response
+  const q = state.questions[state.currentQ];
+  const { rating, feedback, signals } = scoreAnswer(text, q);
+  state.responses.push({ question: q.q, category: q.cat, answer: text, rating, feedback, signals });
+  state.currentQ += 1;
+
+  // Brief AI ack + next question
+  setTimeout(async () => {
+    setSpeaking(true, 'Thinking…');
+    const typing = showTyping();
+    await wait(1100);
+    typing.remove();
+    addBubble(feedback, 'ai', { label: '🤖 Mr. Interviewer' });
+    setSpeaking(false);
+    setTimeout(() => askNextQuestion(false), 800);
+  }, 200);
+}
+
+function scoreAnswer(text, q) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const len = words.length;
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 3);
+
+  // ---------- Collect signals (used both for rating AND for specific feedback) ----------
+  const lower = text.toLowerCase();
+
+  // Numbers / metrics — strong signal of concreteness
+  const metrics = (text.match(/\b\d+(?:[\.,]\d+)?\s*(?:%|percent|x|k|m|b|million|billion|users|customers|requests|hours?|minutes?|seconds?|days?|weeks?|months?|years?|dollars?|\$)?\b/gi) || []);
+  const hasMetric = metrics.length > 0;
+
+  // Concrete example markers
+  const exampleMarkers = /\b(for example|e\.g\.|specifically|in particular|one time|at my last|when i was|in my (?:project|internship|role|team)|i built|i designed|i led|i shipped|i wrote)\b/i.test(text);
+
+  // Hedging / hesitation words — weaken delivery
+  const hedges = (text.match(/\b(uh+|um+|maybe|kind of|sort of|i guess|i think maybe|probably|i'm not sure|i don't really know)\b/gi) || []).length;
+
+  // Structure markers
+  const structureScore =
+    (/\b(first|firstly|second|secondly|third|finally|lastly|then|next|after that)\b/i.test(text) ? 1 : 0) +
+    (sentences.length >= 3 ? 1 : 0);
+
+  // STAR coverage (for behavioral / personalized)
+  const star = {
+    s: /\b(situation|context|the team was|at the time|background)\b/i.test(text),
+    t: /\b(task|goal|objective|i was responsible|my job was|we needed)\b/i.test(text),
+    a: /\b(i (?:built|designed|led|wrote|shipped|launched|owned|drove|created|implemented|deployed|negotiated|presented|analyzed|debugged|prototyped))\b/i.test(text),
+    r: /\b(result|outcome|impact|increased|decreased|reduced|improved|grew|saved|launched|delivered|hit \d|by \d+%)\b/i.test(text)
+  };
+  const starCount = Object.values(star).filter(Boolean).length;
+
+  // Keyword signal (unique only — blocks "Python Python Python...")
+  const allBank = [...new Set([
+    ...state.keywords,
+    ...(KEYWORD_BANK[state.industry?.key] || [])
+  ])];
+  const uniqueHits = new Set(
+    allBank.filter(k => {
+      const safe = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = /^[a-z0-9]+$/i.test(k) ? new RegExp(`\\b${safe}\\b`, 'i') : new RegExp(safe, 'i');
+      return re.test(text);
+    }).map(k => k.toLowerCase())
+  );
+  const hits = uniqueHits.size;
+  const hitsList = [...uniqueHits];
+  const keywordDensity = len > 0 ? hits / len : 0;
+  const isStuffing = len < 20 || keywordDensity > 0.5;
+
+  // ---------- Compute rating ----------
+  let rating = 5;
+  if (len < 25) rating -= 2;
+  else if (len < 60) rating += 0;
+  else if (len < 150) rating += 2;
+  else rating += 1;
+
+  if (!isStuffing) rating += Math.min(2, Math.floor(hits / 2));
+  else if (hits > 0 && len < 20) rating -= 1;
+
+  if (q.cat === 'behavioral' || q.cat === 'personalized') {
+    rating += Math.min(2, starCount - 1); // 0..3 bonus
+  }
+  if (hasMetric) rating += 1;
+  if (exampleMarkers) rating += 1;
+  if (structureScore >= 1) rating += structureScore;
+  if (hedges >= 2) rating -= 1;
+  rating = Math.max(1, Math.min(10, Math.round(rating)));
+
+  const signals = { len, hasMetric, metricCount: metrics.length, exampleMarkers, hedges, structureScore, star, starCount, hits, hitsList, isStuffing };
+
+  // ---------- Build SPECIFIC feedback ----------
+  const fb = buildSpecificFeedback(rating, q, text, signals);
+  return { rating, feedback: fb, signals };
+}
+
+/* Stitches together 1–2 specific positives and 1–2 specific critiques based
+   on what was actually present (or missing) in the user's answer. Avoids the
+   old "generic bucket" feel by quoting numbers, naming missing STAR letters,
+   and pointing at the structure / length / hedge counts directly. */
+function buildSpecificFeedback(rating, q, text, s) {
+  const positives = [];
+  const critiques = [];
+
+  // ----- Positives -----
+  if (s.hasMetric) {
+    const sample = (text.match(/\b\d+(?:[\.,]\d+)?\s*(?:%|x|k|m|users|customers|requests|hours?|days?|weeks?|months?|years?|\$)?\b/i) || [])[0];
+    positives.push(sample
+      ? `you grounded the answer with a number ("${sample.trim()}") — that's the kind of specificity interviewers anchor on`
+      : `nice use of concrete numbers — that lands much harder than "a lot" or "many"`);
+  }
+  if (s.exampleMarkers) positives.push(`you reached for a real example instead of staying abstract`);
+  if (s.structureScore >= 2) positives.push(`the answer had clear sequencing, which makes it much easier to follow under pressure`);
+  if (s.hits >= 3 && !s.isStuffing) positives.push(`you naturally wove in ${s.hits} relevant tools/terms (${s.hitsList.slice(0,3).join(', ')}) — shows real fluency`);
+  if ((q.cat === 'behavioral' || q.cat === 'personalized') && s.starCount === 4) positives.push(`you hit all four STAR beats — Situation, Task, Action, and Result`);
+  if (s.len >= 80 && s.len <= 180) positives.push(`length was in the sweet spot (~${s.len} words) — substantial without rambling`);
+
+  // ----- Critiques -----
+  if (s.len < 25) {
+    critiques.push(`the answer was very short (${s.len} words) — most strong responses run 80–150 words. Add at least one concrete example with a measurable outcome.`);
+  } else if (s.len > 220) {
+    critiques.push(`it ran long (${s.len} words). Tighten to ~120 by cutting setup and leading with the most interesting moment.`);
+  }
+  if (q.cat === 'behavioral' || q.cat === 'personalized') {
+    const missing = [];
+    if (!s.star.s) missing.push('Situation (set the scene)');
+    if (!s.star.t) missing.push('Task (what you owned)');
+    if (!s.star.a) missing.push('Action (what *you* specifically did)');
+    if (!s.star.r) missing.push('Result (a quantified outcome)');
+    if (missing.length === 1) critiques.push(`the only STAR letter you didn't fully hit was <b>${missing[0]}</b> — add one sentence on that and the answer is interview-ready.`);
+    else if (missing.length === 2) critiques.push(`STAR was partial — you skipped the <b>${missing.join(' and ')}</b>. Even one sentence on each closes the gap.`);
+    else if (missing.length >= 3) critiques.push(`use the STAR framework on the next attempt: Situation, Task, Action, Result. Right now the answer reads more like commentary than a story.`);
+  }
+  if (q.cat === 'technical' && !s.exampleMarkers && s.len >= 25) {
+    critiques.push(`the reasoning stayed conceptual — walk through a specific case (input → step → output) so the interviewer sees how you actually think.`);
+  }
+  if (q.cat === 'system_design' && !/\b(tradeoff|tradeoffs|because|alternative|instead of|prefer|chose|chosen|consistency|latency|throughput|cache|database|sharding|partition|queue)\b/i.test(text)) {
+    critiques.push(`name at least one explicit tradeoff (e.g., consistency vs. latency, SQL vs. NoSQL) — that's the single biggest signal in system design.`);
+  }
+  if (q.cat === 'case' && !s.hasMetric && s.len >= 25) {
+    critiques.push(`anchor your reasoning in a number — even a rough estimate (population, conversion rate, dollars) makes the case feel rigorous.`);
+  }
+  if (s.hedges >= 2) {
+    critiques.push(`you used ${s.hedges} hedge words ("maybe", "kind of", "I guess"). In interviews this reads as low confidence — say it plainly, then add a caveat only if you actually have one.`);
+  }
+  if (s.isStuffing && s.hits > 0) {
+    critiques.push(`the answer leaned on keyword name-drops without enough connecting reasoning. Pick 1–2 of those tools and explain *why* you chose them, not just that you used them.`);
+  }
+  if (!s.hasMetric && (q.cat === 'behavioral' || q.cat === 'personalized') && s.len >= 40) {
+    critiques.push(`there was no measurable outcome. Even a directional one ("cut load time roughly in half", "saved the team a sprint") makes the impact concrete.`);
+  }
+
+  // ----- Compose final message -----
+  const opener =
+    rating >= 9 ? `🎯 Excellent.` :
+    rating >= 7 ? `✅ Strong answer.` :
+    rating >= 5 ? `🟡 Decent foundation.` :
+    rating >= 3 ? `🟠 Needs work.` :
+                  `🔴 Let's rebuild this one.`;
+
+  let body = '';
+  if (positives.length) body += `What worked: ${positives.slice(0,2).join('; ')}. `;
+  if (critiques.length) body += `To improve: ${critiques.slice(0,2).join(' ')}`;
+  if (!positives.length && !critiques.length) body = `Reasonable answer — let's keep building momentum.`;
+
+  return `${opener} ${body}`.trim();
+}
+
+function endInterviewEarly() {
+  if (state.responses.length === 0) {
+    // Inline confirm rather than alert() — non-blocking + on-brand.
+    const status = document.getElementById('ai-status');
+    const original = status.textContent;
+    status.textContent = '⚠️ Answer at least one question before ending.';
+    status.style.color = 'var(--danger)';
+    setTimeout(() => {
+      status.textContent = original;
+      status.style.color = '';
+    }, 2400);
+    document.getElementById('user-input').focus();
+    return;
+  }
+  finishInterview();
+}
+
+function finishInterview() {
+  clearInterval(state.timerInt);
+  // Defensive guard — should never hit because endInterviewEarly already filters,
+  // but covers the edge case where finishInterview is called directly.
+  if (state.responses.length === 0) {
+    goTo('resume');
+    return;
+  }
+  // Compute aggregate scores across 4 dimensions
+  const ratings = state.responses.map(r => r.rating);
+  const avg = ratings.reduce((a,b)=>a+b,0) / ratings.length;
+  const scores = {
+    technical: clamp(Math.round(avg + (rng()*1.4 - 0.7)), 1, 10),
+    problem_solving: clamp(Math.round(avg + (rng()*1.4 - 0.7)), 1, 10),
+    communication: clamp(Math.round(avg + (rng()*1.4 - 0.7)), 1, 10),
+    behavioral_fit: clamp(Math.round(avg + (rng()*1.4 - 0.7)), 1, 10)
+  };
+  renderFeedback(scores, avg);
+  goTo('feedback');
+}
+
+function renderFeedback(scores, avg) {
+  document.getElementById('feedback-sub').innerHTML =
+    `${state.role.name} · ${labelExp(state.experience)} · ${state.responses.length} questions · ${document.getElementById('timer').textContent} elapsed`;
+  document.getElementById('score-grid').innerHTML = `
+    ${scoreCard('Technical', scores.technical)}
+    ${scoreCard('Problem Solving', scores.problem_solving)}
+    ${scoreCard('Communication', scores.communication)}
+    ${scoreCard('Behavioral Fit', scores.behavioral_fit)}
+  `;
+  document.getElementById('overall-feedback').innerHTML = `
+    <h4>Overall Summary</h4>
+    ${buildOverallSummary(scores)}
+  `;
+
+  document.getElementById('qa-breakdown').innerHTML = state.responses.map((r,i) => `
+    <div class="qa-row">
+      <div class="q">Q${i+1}. ${escapeHtml(r.question)} <span class="rating-pill">${r.rating}/10</span></div>
+      <div class="a"><b>Your answer:</b> ${escapeHtml(r.answer)}</div>
+      <div class="fb"><b>Feedback:</b> ${r.feedback}</div>
+    </div>
+  `).join('');
+}
+
+/* =========================================================
+   Data-driven overall summary.
+   Aggregates signals across every response and writes a
+   varied, specific paragraph: strongest dimension, weakest
+   dimension, concrete patterns (avg length, % with metrics,
+   % hitting STAR, hedge count), and a top-3 action list.
+   ========================================================= */
+function buildOverallSummary(scores) {
+  const responses = state.responses;
+  const n = responses.length;
+
+  // ---- Aggregate signals ----
+  const ratings = responses.map(r => r.rating);
+  const avgRating = ratings.reduce((a,b)=>a+b,0) / n;
+  const lens = responses.map(r => r.signals?.len || 0);
+  const avgLen = Math.round(lens.reduce((a,b)=>a+b,0) / n);
+
+  const withMetric = responses.filter(r => r.signals?.hasMetric).length;
+  const withExample = responses.filter(r => r.signals?.exampleMarkers).length;
+  const totalHedges = responses.reduce((sum,r)=> sum + (r.signals?.hedges || 0), 0);
+  const behavioralResponses = responses.filter(r => r.category === 'behavioral' || r.category === 'personalized');
+  const fullStar = behavioralResponses.filter(r => r.signals?.starCount === 4).length;
+  const strongestQ = responses.reduce((a,b) => b.rating > a.rating ? b : a, responses[0]);
+  const weakestQ   = responses.reduce((a,b) => b.rating < a.rating ? b : a, responses[0]);
+
+  // Strongest / weakest dimension
+  const dims = [
+    { key: 'technical',       name: 'technical depth',    score: scores.technical },
+    { key: 'problem_solving', name: 'problem solving',     score: scores.problem_solving },
+    { key: 'communication',   name: 'communication',       score: scores.communication },
+    { key: 'behavioral_fit',  name: 'behavioral fit',      score: scores.behavioral_fit }
+  ];
+  const sortedDims = [...dims].sort((a,b) => b.score - a.score);
+  const top = sortedDims[0], bottom = sortedDims[sortedDims.length - 1];
+
+  // ---- Headline (varied opener depending on overall avg) ----
+  const overall = (scores.technical + scores.problem_solving + scores.communication + scores.behavioral_fit) / 4;
+  const openers = {
+    high: [
+      `You'd walk out of this round with the interviewer leaning forward.`,
+      `This was an interview-ready performance — the kind that gets second rounds.`,
+      `Real signal across the board. A hiring manager would already be drafting the writeup.`
+    ],
+    mid: [
+      `Mixed round — a couple of answers landed clean, others left points on the table.`,
+      `You've got the raw material. The next 10% is mostly polish, not new skill.`,
+      `Solid foundation, uneven delivery. An interviewer would say "promising, wants more depth."`
+    ],
+    low: [
+      `Rough round, but every weakness here has a clear fix — none are about smarts.`,
+      `Think of this as the practice interview that catches the things a real one would punish.`,
+      `The answers needed more substance. Good news: that's the easiest gap to close before the real thing.`
+    ]
+  };
+  const bucket = overall >= 7.5 ? 'high' : overall >= 5 ? 'mid' : 'low';
+  const opener = openers[bucket][Math.floor(Math.random() * openers[bucket].length)];
+
+  // ---- Strength sentence (specific, with numbers) ----
+  let strengthLine = `Your standout was <b>${top.name}</b> (${top.score}/10)`;
+  const strengthAdds = [];
+  if (withMetric >= Math.ceil(n * 0.6)) strengthAdds.push(`${withMetric} of ${n} answers were anchored in real numbers`);
+  if (withExample >= Math.ceil(n * 0.6)) strengthAdds.push(`you reached for concrete examples in ${withExample} of ${n} answers`);
+  if (fullStar >= 1 && behavioralResponses.length > 0) strengthAdds.push(`you hit all four STAR beats on ${fullStar} of ${behavioralResponses.length} behavioral question${behavioralResponses.length===1?'':'s'}`);
+  if (avgLen >= 80 && avgLen <= 180) strengthAdds.push(`your average answer length (${avgLen} words) was right in the interview sweet spot`);
+  if (strengthAdds.length) strengthLine += ` — ${strengthAdds.slice(0,2).join(', and ')}.`;
+  else strengthLine += `.`;
+
+  // ---- Pattern callout — strongest individual answer ----
+  const strongestQText = strongestQ ? `Your strongest answer was Q${responses.indexOf(strongestQ)+1} ("${truncate(strongestQ.question, 70)}", scored ${strongestQ.rating}/10)` : '';
+
+  // ---- Weakness sentence ----
+  let weaknessLine = `The biggest gap was <b>${bottom.name}</b> (${bottom.score}/10)`;
+  const weaknessAdds = [];
+  if (withMetric <= Math.floor(n * 0.3)) weaknessAdds.push(`only ${withMetric} of ${n} answers cited a real number`);
+  if (totalHedges >= 3) weaknessAdds.push(`you used hedge words ("maybe", "kind of", "I guess") ${totalHedges} times across the round`);
+  if (avgLen < 50) weaknessAdds.push(`your average answer was only ${avgLen} words — most strong answers run 80–150`);
+  if (avgLen > 200) weaknessAdds.push(`your average answer ran ${avgLen} words — interviewers tune out after ~150`);
+  if (behavioralResponses.length > 0 && fullStar === 0) weaknessAdds.push(`you didn't fully complete STAR on any behavioral question`);
+  if (withExample === 0 && n > 0) weaknessAdds.push(`none of your answers led with a specific example`);
+  if (weaknessAdds.length) weaknessLine += ` — ${weaknessAdds.slice(0,2).join(', and ')}.`;
+  else weaknessLine += `.`;
+
+  // ---- Concrete top-3 next actions, prioritized by which gap will move the score most ----
+  const actions = [];
+  if (avgLen < 50) actions.push(`Aim for 80–150 words per answer. Force yourself to add one specific example before stopping.`);
+  if (withMetric <= Math.floor(n * 0.3)) actions.push(`Memorize 3 concrete metrics from your projects (latency dropped X%, revenue up $Y, team grew from N→M) — pull one into every behavioral answer.`);
+  if (behavioralResponses.length > 0 && fullStar < behavioralResponses.length) actions.push(`Drill STAR until it's automatic: Situation in 1 sentence, Task in 1 sentence, Action in 2–3 (with "I" not "we"), Result with a number.`);
+  if (totalHedges >= 3) actions.push(`Cut hedge words. Practice saying claims plainly first, then add the caveat after — not before.`);
+  if (avgLen > 200) actions.push(`Practice the 90-second answer. If you can't say it in 90s, you don't know it well enough yet.`);
+  if (bottom.key === 'communication' && actions.length < 3) actions.push(`Record yourself answering 2 questions, listen back. The first 10 seconds and the last 10 seconds are usually where polish is missing.`);
+  if (bottom.key === 'technical' && actions.length < 3) actions.push(`For technical questions, narrate input → approach → tradeoff → verification. Even when the answer is short, that scaffolding signals depth.`);
+  while (actions.length < 3) actions.push(`Re-run this mock after a week, mixing in 1–2 new questions. Watch the deltas, not the absolute scores.`);
+
+  // ---- Compose ----
+  return `
+    <p>${opener}</p>
+    <p style="margin-top:12px;">${strengthLine}</p>
+    ${strongestQText ? `<p style="margin-top:6px; color:var(--text-dim);">${strongestQText}.</p>` : ''}
+    <p style="margin-top:12px;">${weaknessLine}</p>
+    <h4 style="margin-top:18px; color:var(--accent);">Your top 3 next actions</h4>
+    <ol style="margin-top:8px; padding-left:22px; line-height:1.7;">
+      ${actions.slice(0,3).map(a => `<li style="margin-bottom:6px;">${a}</li>`).join('')}
+    </ol>
+  `;
+}
+
+function truncate(s, n) {
+  if (!s) return '';
+  return s.length > n ? s.slice(0, n).trim() + '…' : s;
+}
+
+function scoreCard(label, score) {
+  return `
+    <div class="neu score-card">
+      <h4>${label}</h4>
+      <div class="score-gauge"><div class="num">${score}</div></div>
+      <div style="color:var(--text-dim); font-size:12px;">out of 10</div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+function rng() { return Math.random(); }
+function getFirstName() { return 'there'; }
+function labelExp(level) {
+  return ({ student:'student', new_grad:'new-grad', mid:'mid-level', senior:'senior' })[level] || level;
+}
+function escapeHtml(s) {
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function resetAll() {
+  state.industry = null; state.role = null; state.experience = null;
+  state.resumeText = ''; state.keywords = []; state.questions = []; state.responses = [];
+  state.currentQ = 0;
+  document.getElementById('btn-industry-next').disabled = true;
+  document.getElementById('btn-role-next').disabled = true;
+  document.getElementById('btn-exp-next').disabled = true;
+  document.querySelectorAll('.pick-card, .role-item, .exp-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('keywords-display').classList.remove('active');
+  document.getElementById('companies-banner-slot').innerHTML = '';
+  document.querySelector('#drop-zone h3').textContent = 'Drag & drop your resume here';
+  document.querySelector('#drop-zone p').textContent = 'PDF or .txt — or click to browse. We never store your resume.';
+  goTo('hero');
+}
+
+/* Keyboard: Enter to send (Shift+Enter for newline) */
+document.getElementById('user-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAnswer(); }
+});
+
+/* =========================================================
+   Mobile keyboard handling — visualViewport API.
+   When the on-screen keyboard opens, the viewport shrinks. We listen
+   for that and (a) cap the chat-area max-height to the visible space,
+   (b) scroll the latest bubble + the input into view so they're never
+   hidden behind the keyboard.
+   ========================================================= */
+(function initMobileKeyboard() {
+  if (!window.visualViewport) return;
+  const ta = document.getElementById('user-input');
+  const chat = document.getElementById('chat-area');
+
+  function adjustForViewport() {
+    const vh = window.visualViewport.height;
+    // Only constrain when viewport is meaningfully smaller than full window
+    // (i.e. keyboard is up, not just normal scrolling).
+    if (vh < window.innerHeight - 100) {
+      chat.style.maxHeight = Math.max(180, vh - 320) + 'px';
+    } else {
+      chat.style.maxHeight = '';
+    }
+    // Keep latest content visible
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  window.visualViewport.addEventListener('resize', adjustForViewport);
+  window.visualViewport.addEventListener('scroll', adjustForViewport);
+  ta.addEventListener('focus', () => {
+    setTimeout(() => {
+      adjustForViewport();
+      ta.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    }, 250);
+  });
+  ta.addEventListener('blur', adjustForViewport);
+})();
+
+/* Initial render — also pre-render so first nav is instant */
+renderIndustries();
+</script>
+</body>
+</html>
