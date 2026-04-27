@@ -280,6 +280,62 @@
     color: var(--accent); font-size: 13px; font-weight: 600;
     border: 1px solid rgba(94,234,212,0.25);
     animation: pulseIn 0.4s ease backwards;
+    cursor: help;
+    position: relative;
+  }
+  .keyword-chip[data-context]::after {
+    content: attr(data-context);
+    position: absolute; left: 50%; bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+    background: var(--bg); color: var(--text);
+    border: 1px solid rgba(94,234,212,0.35);
+    padding: 8px 12px; border-radius: 10px;
+    font-size: 11px; font-weight: 400; line-height: 1.45;
+    white-space: normal; width: max-content; max-width: 280px;
+    box-shadow: 6px 6px 14px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 20;
+  }
+  .keyword-chip:hover::after { opacity: 1; }
+  .keyword-group { margin-bottom: 14px; }
+  .keyword-group:last-child { margin-bottom: 0; }
+  .keyword-group-label {
+    display: block; font-size: 10px; letter-spacing: 1.4px;
+    text-transform: uppercase; color: var(--text-dim);
+    margin: 0 4px 6px; font-weight: 700;
+  }
+  .scan-summary {
+    margin-top: 18px; padding-top: 16px;
+    border-top: 1px dashed rgba(255,255,255,0.08);
+  }
+  .scan-summary h5 {
+    font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 10px; font-weight: 700;
+  }
+  .scan-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .scan-tile {
+    padding: 10px 12px; border-radius: 12px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .scan-tile-num { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .scan-tile-num.warn { color: #fbbf24; }
+  .scan-tile-num.bad  { color: #f87171; }
+  .scan-tile-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .scan-tile-detail { font-size: 11px; color: var(--text); margin-top: 4px; line-height: 1.45; }
+  .scan-note {
+    margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+    background: rgba(251,191,36,0.06);
+    border-left: 3px solid #fbbf24;
+    font-size: 12px; color: var(--text); line-height: 1.5;
+  }
+  .scan-note.good {
+    background: rgba(94,234,212,0.05);
+    border-left-color: var(--accent);
   }
   .resume-actions { margin-top: 24px; display: flex; gap: 12px; justify-content: center; align-items: center; }
   .skip-link {
@@ -712,8 +768,9 @@
         <input type="file" id="file-input" accept=".pdf,.txt" hidden />
       </div>
       <div class="neu keywords-display" id="keywords-display">
-        <h4>🔍 Keywords detected</h4>
+        <h4>🔍 Resume scan</h4>
         <div id="keyword-chips"></div>
+        <div id="resume-scan-summary"></div>
       </div>
       <div class="resume-actions">
         <button class="neu-btn primary" id="btn-resume-next" onclick="startInterview()">Start Interview →</button>
@@ -1394,24 +1451,241 @@ async function handleFile(file) {
   }
 }
 
-function scanKeywords(text) {
-  const lower = text.toLowerCase();
-  const bank = (KEYWORD_BANK[state.industry?.key] || []).concat(
-    Object.values(KEYWORD_BANK).flat()
-  );
-  const found = [...new Set(bank.filter(k => lower.includes(k.toLowerCase())))].slice(0, 24);
-  state.keywords = found;
-  const display = document.getElementById('keywords-display');
-  const chips = document.getElementById('keyword-chips');
-  if (found.length) {
-    chips.innerHTML = found.map((k,i) =>
-      `<span class="keyword-chip" style="animation-delay:${i*0.04}s">${k}</span>`
-    ).join('');
-    display.classList.add('active');
-  } else {
-    chips.innerHTML = '<span style="color:var(--text-dim); font-size:13px;">No common keywords detected — that\'s fine, we\'ll use the role\'s standard question bank.</span>';
-    display.classList.add('active');
+/* Universal boundary-aware presence check used by every keyword scorer.
+   Returns true iff `keyword` appears in `text` with non-alphanumeric chars
+   (or string boundaries) on both sides — no more "CAD" inside "academic". */
+function keywordPresent(keyword, text) {
+  if (!keyword || !text) return false;
+  const lk = keyword.toLowerCase();
+  const lt = text.toLowerCase();
+  const isWordChar = c => /[a-z0-9]/.test(c);
+  let from = 0;
+  while (from < lt.length) {
+    const idx = lt.indexOf(lk, from);
+    if (idx === -1) return false;
+    const before = idx === 0 ? '' : lt[idx - 1];
+    const after  = idx + lk.length >= lt.length ? '' : lt[idx + lk.length];
+    if ((!before || !isWordChar(before)) && (!after || !isWordChar(after))) return true;
+    from = idx + lk.length;
   }
+  return false;
+}
+
+/* Display labels for each KEYWORD_BANK key. */
+const INDUSTRY_LABELS = {
+  tech: 'Technology', finance: 'Finance', health: 'Healthcare',
+  eng: 'Engineering', biz: 'Business / Marketing', media: 'Design / Media',
+  ops: 'Operations / Supply Chain', gov: 'Government / Legal',
+  energy: 'Energy / Sustainability'
+};
+
+/* Boundary-aware keyword search.
+   Returns [{ keyword, industry, contexts: [snippet, ...] }, ...].
+   Rejects matches where an alphanumeric character flanks the hit, so
+   "CAD" won't pull from "aCADemic" and "SEM" won't pull from "SEMester". */
+function findKeywordHits(text, bankByIndustry) {
+  const lower = text.toLowerCase();
+  const isWordChar = c => /[a-z0-9]/.test(c);
+  const seen = new Map(); // lower keyword -> result
+  for (const [industry, list] of Object.entries(bankByIndustry)) {
+    for (const k of list) {
+      const lk = k.toLowerCase();
+      if (seen.has(lk)) continue; // first industry that hit wins
+      const contexts = [];
+      let from = 0;
+      while (from < lower.length) {
+        const idx = lower.indexOf(lk, from);
+        if (idx === -1) break;
+        const before = idx === 0 ? '' : lower[idx - 1];
+        const after  = idx + lk.length >= lower.length ? '' : lower[idx + lk.length];
+        const okLeft  = !before || !isWordChar(before);
+        const okRight = !after  || !isWordChar(after);
+        if (okLeft && okRight) {
+          const start = Math.max(0, idx - 28);
+          const end   = Math.min(text.length, idx + lk.length + 28);
+          let snip = text.slice(start, end).replace(/\s+/g, ' ').trim();
+          if (start > 0) snip = '…' + snip;
+          if (end < text.length) snip = snip + '…';
+          contexts.push(snip);
+          if (contexts.length >= 2) break;
+        }
+        from = idx + lk.length;
+      }
+      if (contexts.length) seen.set(lk, { keyword: k, industry, contexts });
+    }
+  }
+  return [...seen.values()];
+}
+
+/* Lightweight structural analysis of the resume text. */
+function analyzeResumeStructure(text) {
+  const wordCount = (text.match(/\b[\w'-]+\b/g) || []).length;
+
+  const ACTION_VERBS = ['led','built','designed','shipped','launched','owned','drove',
+    'created','implemented','deployed','developed','engineered','architected',
+    'optimized','scaled','automated','negotiated','presented','analyzed',
+    'debugged','prototyped','researched','managed','coordinated','founded',
+    'spearheaded','organized','executed','delivered','reduced','increased',
+    'improved','grew','saved','mentored','trained','collaborated','planned',
+    'achieved','published','authored','assisted','devised','taught','served',
+    'compiled','explored','planned','catered','streamlined'];
+  const verbsFound = new Set();
+  for (const v of ACTION_VERBS) {
+    if (new RegExp(`\\b${v}\\b`, 'i').test(text)) verbsFound.add(v);
+  }
+
+  // Numbers w/ context: percentages, dollar amounts, "over N", "N+ users", etc.
+  const quantMatches = text.match(/\b\d+%|\$\d[\d,.]*[kKmMbB]?|\bover\s+\d[\d,]*|\b\d{2,}[\s+]/gi) || [];
+  const quantifications = quantMatches.length;
+
+  const SECTION_RE = {
+    'Education': /\beducation\b/i,
+    'Experience': /\b(experience|work history|employment)\b/i,
+    'Projects': /\bprojects?\b/i,
+    'Skills': /\bskills\b/i,
+    'Certifications': /\b(certifications?|licenses?)\b/i,
+    'Awards': /\b(awards?|honou?rs)\b/i,
+    'Publications': /\bpublications?\b/i,
+    'Leadership': /\bleadership\b/i,
+    'Volunteer': /\bvolunteer/i
+  };
+  const sections = Object.entries(SECTION_RE)
+    .filter(([_, re]) => re.test(text))
+    .map(([s]) => s);
+
+  const bullets = (text.match(/(?:^|\s)[•\-\*\∗](?=\s)/g) || []).length;
+
+  // Hedging / weak phrases — flag as opportunity for stronger framing
+  const weakPhrases = (text.match(/\b(?:helped\s+with|worked\s+on|responsible\s+for|tasks\s+included|various\s+duties)\b/gi) || []).length;
+
+  return { wordCount, verbsFound: [...verbsFound], quantifications, sections, bullets, weakPhrases };
+}
+
+/* Renders the upgraded resume scan panel: grouped chips + structural summary. */
+function scanKeywords(text) {
+  // Build per-industry bank dict so we can label which group each hit came from.
+  // Industry of choice goes first so its hits win the "first-seen" tiebreak.
+  const ordered = {};
+  if (state.industry?.key && KEYWORD_BANK[state.industry.key]) {
+    ordered[state.industry.key] = KEYWORD_BANK[state.industry.key];
+  }
+  for (const [k, v] of Object.entries(KEYWORD_BANK)) {
+    if (!ordered[k]) ordered[k] = v;
+  }
+
+  const hits = findKeywordHits(text, ordered);
+
+  // Hoist hits from the chosen industry to the top, then alphabetize the rest.
+  const byIndustry = {};
+  for (const h of hits) {
+    (byIndustry[h.industry] = byIndustry[h.industry] || []).push(h);
+  }
+
+  // Trim to 30 keywords total to keep the chip cloud tidy.
+  let total = 0;
+  const cap = 30;
+  state.keywords = [];
+
+  const display = document.getElementById('keywords-display');
+  const chips   = document.getElementById('keyword-chips');
+  const summary = document.getElementById('resume-scan-summary');
+
+  // ---------- Chips, grouped by industry ----------
+  const orderKeys = Object.keys(ordered).filter(k => byIndustry[k]?.length);
+  if (!orderKeys.length) {
+    chips.innerHTML = `<span style="color:var(--text-dim); font-size:13px;">
+      No standard industry keywords detected — that's fine, we'll still use your resume for personalized questions and fall back to the role's standard question bank.
+    </span>`;
+  } else {
+    let chipDelay = 0;
+    chips.innerHTML = orderKeys.map(industry => {
+      const list = byIndustry[industry].sort((a, b) => a.keyword.localeCompare(b.keyword));
+      const remaining = cap - total;
+      const slice = list.slice(0, Math.max(0, remaining));
+      total += slice.length;
+      slice.forEach(h => state.keywords.push(h.keyword));
+      const chipHtml = slice.map(h => {
+        const ctx = h.contexts.map(c => `“${c}”`).join('  ·  ').replace(/"/g, '&quot;');
+        const delay = (chipDelay++) * 0.035;
+        return `<span class="keyword-chip"
+                      style="animation-delay:${delay}s"
+                      data-context="Found in resume: ${ctx.replace(/</g,'&lt;')}">${h.keyword}</span>`;
+      }).join('');
+      const label = INDUSTRY_LABELS[industry] || industry;
+      const tag = (industry === state.industry?.key) ? `${label} <span style="opacity:.6;">· your industry</span>` : label;
+      return `<div class="keyword-group">
+                <span class="keyword-group-label">${tag}</span>
+                ${chipHtml}
+              </div>`;
+    }).join('');
+  }
+
+  // ---------- Structural summary ----------
+  const struct = analyzeResumeStructure(text);
+
+  const wcClass  = struct.wordCount < 200 ? 'warn' : (struct.wordCount > 900 ? 'warn' : '');
+  const verbClass = struct.verbsFound.length < 6 ? 'warn' : '';
+  const quantClass = struct.quantifications < 3 ? 'warn' : '';
+  const weakClass = struct.weakPhrases >= 2 ? 'bad' : (struct.weakPhrases === 1 ? 'warn' : '');
+
+  const verbPreview = struct.verbsFound.slice(0, 5).join(', ') + (struct.verbsFound.length > 5 ? `, +${struct.verbsFound.length - 5}` : '');
+
+  summary.innerHTML = `
+    <div class="scan-summary">
+      <h5>📊 Structural scan</h5>
+      <div class="scan-grid">
+        <div class="scan-tile">
+          <div class="scan-tile-num ${wcClass}">${struct.wordCount}</div>
+          <div class="scan-tile-label">Words</div>
+          <div class="scan-tile-detail">${struct.wordCount < 200 ? 'On the short side — aim 350–700.' : struct.wordCount > 900 ? 'Long — recruiters scan in 30s, trim to 1 page.' : 'Solid length.'}</div>
+        </div>
+        <div class="scan-tile">
+          <div class="scan-tile-num ${verbClass}">${struct.verbsFound.length}</div>
+          <div class="scan-tile-label">Action verbs</div>
+          <div class="scan-tile-detail">${struct.verbsFound.length ? verbPreview : 'None detected — start bullets with verbs like “Led / Built / Shipped”.'}</div>
+        </div>
+        <div class="scan-tile">
+          <div class="scan-tile-num ${quantClass}">${struct.quantifications}</div>
+          <div class="scan-tile-label">Quantifications</div>
+          <div class="scan-tile-detail">${struct.quantifications >= 3 ? 'Good — numbers prove impact.' : 'Add metrics: %, $, # of users, time saved.'}</div>
+        </div>
+        <div class="scan-tile">
+          <div class="scan-tile-num">${struct.sections.length}</div>
+          <div class="scan-tile-label">Sections</div>
+          <div class="scan-tile-detail">${struct.sections.length ? struct.sections.join(', ') : 'Sections not clearly labeled.'}</div>
+        </div>
+        <div class="scan-tile">
+          <div class="scan-tile-num">${struct.bullets}</div>
+          <div class="scan-tile-label">Bullet points</div>
+          <div class="scan-tile-detail">${struct.bullets >= 6 ? 'Good — bullet density helps scanning.' : 'Few bullets — break dense paragraphs into bullets.'}</div>
+        </div>
+        <div class="scan-tile">
+          <div class="scan-tile-num ${weakClass}">${struct.weakPhrases}</div>
+          <div class="scan-tile-label">Weak phrases</div>
+          <div class="scan-tile-detail">${struct.weakPhrases ? '“Helped with / Responsible for” — replace with stronger verbs + outcomes.' : 'No weak filler detected.'}</div>
+        </div>
+      </div>
+      ${buildScanNote(state.keywords.length, struct)}
+    </div>`;
+
+  display.classList.add('active');
+}
+
+/* Quick advisory line at the bottom of the structural scan. */
+function buildScanNote(keywordCount, s) {
+  const tips = [];
+  if (keywordCount === 0) tips.push('Add specific tools, frameworks, or methodologies tied to your target role.');
+  if (s.quantifications < 3) tips.push('Quantify impact — numbers, percentages, dollar amounts, headcount.');
+  if (s.verbsFound.length < 6) tips.push('Start each bullet with a strong action verb.');
+  if (s.weakPhrases >= 1) tips.push('Replace “helped with / responsible for” with what you actually built or shipped.');
+  if (s.wordCount < 200) tips.push('Resume is short — flesh out experience bullets with what you did + the result.');
+
+  if (!tips.length) {
+    return `<div class="scan-note good">✓ Resume looks well-structured. We'll still pull at least one personalized question from it during the interview.</div>`;
+  }
+  return `<div class="scan-note">
+    <b>Suggested upgrades:</b><br>${tips.map(t => '• ' + t).join('<br>')}
+  </div>`;
 }
 
 /* =========================================================
@@ -1645,8 +1919,17 @@ function scoreAnswer(text, q) {
   // ---------- Collect signals (used both for rating AND for specific feedback) ----------
   const lower = text.toLowerCase();
 
-  // Numbers / metrics — strong signal of concreteness
-  const metrics = (text.match(/\b\d+(?:[\.,]\d+)?\s*(?:%|percent|x|k|m|b|million|billion|users|customers|requests|hours?|minutes?|seconds?|days?|weeks?|months?|years?|dollars?|\$)?\b/gi) || []);
+  // Numbers / metrics — strong signal of concreteness.
+  // FIX: bare numbers like "Step 1" or "I had 2 ideas" no longer count as
+  // metrics. We require one of three patterns, in priority order:
+  //   1) Dollar amounts ("$5", "$10k", "$2.4M")  ← longest match first
+  //   2) Approximation phrases ("over 5000", "nearly 100", "more than 50")
+  //   3) Number with a unit/qualifier ("50%", "200 users", "3x", "2 weeks")
+  // The (?=\W|$) tail ensures the unit isn't part of a longer word
+  // ("200 useless" → won't match "200 use") AND that "%" / numerals at
+  // end-of-string still match (which the old \b version broke).
+  const metricRe = /\$\s?\d[\d,.]*\s?[kKmMbB]?(?=\W|$)|\b(?:over|nearly|approximately|about|roughly|around|up to|more than|less than)\s+\$?\d[\d,.]*(?:\s*[kKmMbB])?(?=\W|$)|\b\d+(?:[\.,]\d+)?\s*(?:%|x|k|m|b|percent|million|billion|users|customers|clients|requests|hours?|minutes?|seconds?|days?|weeks?|months?|years?|dollars?|students?|people|sales|deals|leads)(?=\W|$)/gi;
+  const metrics = text.match(metricRe) || [];
   const hasMetric = metrics.length > 0;
 
   // Concrete example markers
@@ -1661,25 +1944,27 @@ function scoreAnswer(text, q) {
     (sentences.length >= 3 ? 1 : 0);
 
   // STAR coverage (for behavioral / personalized)
+  // FIX: Action now credits "we / the team / our team / I" (not just "I"),
+  // and the verb list is broader. Result regex was matching only single-digit
+  // numbers after "hit" because of \d\b — fixed to \d+.
+  const ACTION_VERBS_RE = '(?:built|designed|led|wrote|shipped|launched|owned|drove|created|implemented|deployed|negotiated|presented|analyzed|debugged|prototyped|developed|delivered|engineered|architected|coordinated|managed|spearheaded|automated|optimized|scaled|founded|organized|executed|researched|trained|mentored|collaborated|planned|achieved|published|authored)';
   const star = {
-    s: /\b(situation|context|the team was|at the time|background)\b/i.test(text),
-    t: /\b(task|goal|objective|i was responsible|my job was|we needed)\b/i.test(text),
-    a: /\b(i (?:built|designed|led|wrote|shipped|launched|owned|drove|created|implemented|deployed|negotiated|presented|analyzed|debugged|prototyped))\b/i.test(text),
-    r: /\b(result|outcome|impact|increased|decreased|reduced|improved|grew|saved|launched|delivered|hit \d|by \d+%)\b/i.test(text)
+    s: /\b(situation|context|the team was|at the time|background|when (?:we|i|our team) (?:were|was)|the company was)\b/i.test(text),
+    t: /\b(task|goal|objective|i was responsible|my job was|we needed|the goal was|our (?:goal|task|objective))\b/i.test(text),
+    a: new RegExp(`\\b(?:i|we|our team|the team)\\s+${ACTION_VERBS_RE}\\b`, 'i').test(text),
+    r: /\b(result|outcome|impact|increased|decreased|reduced|improved|grew|saved|launched|delivered|hit \d+|by \d+%|cut \d|raised|generated|drove \d|achieved \d)\b/i.test(text)
   };
   const starCount = Object.values(star).filter(Boolean).length;
 
   // Keyword signal (unique only — blocks "Python Python Python...")
+  // Uses the shared boundary-aware helper so keywords like CAD, SEM, M&A,
+  // C++, A/B testing all match correctly without substring false positives.
   const allBank = [...new Set([
     ...state.keywords,
     ...(KEYWORD_BANK[state.industry?.key] || [])
   ])];
   const uniqueHits = new Set(
-    allBank.filter(k => {
-      const safe = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = /^[a-z0-9]+$/i.test(k) ? new RegExp(`\\b${safe}\\b`, 'i') : new RegExp(safe, 'i');
-      return re.test(text);
-    }).map(k => k.toLowerCase())
+    allBank.filter(k => keywordPresent(k, text)).map(k => k.toLowerCase())
   );
   const hits = uniqueHits.size;
   const hitsList = [...uniqueHits];
@@ -1722,7 +2007,11 @@ function buildSpecificFeedback(rating, q, text, s) {
 
   // ----- Positives -----
   if (s.hasMetric) {
-    const sample = (text.match(/\b\d+(?:[\.,]\d+)?\s*(?:%|x|k|m|users|customers|requests|hours?|days?|weeks?|months?|years?|\$)?\b/i) || [])[0];
+    // Pull the first real metric we already detected upstream (signals.metricCount > 0
+    // guarantees there's at least one in the text). Re-run the same canonical
+    // metric pattern so the quoted phrase is genuinely a metric, not a bare digit.
+    const metricRe = /\$\s?\d[\d,.]*\s?[kKmMbB]?(?=\W|$)|\b(?:over|nearly|approximately|about|roughly|around|up to|more than|less than)\s+\$?\d[\d,.]*(?:\s*[kKmMbB])?(?=\W|$)|\b\d+(?:[\.,]\d+)?\s*(?:%|x|k|m|b|percent|million|billion|users|customers|clients|requests|hours?|minutes?|seconds?|days?|weeks?|months?|years?|dollars?|students?|people|sales|deals|leads)(?=\W|$)/i;
+    const sample = (text.match(metricRe) || [])[0];
     positives.push(sample
       ? `you grounded the answer with a number ("${sample.trim()}") — that's the kind of specificity interviewers anchor on`
       : `nice use of concrete numbers — that lands much harder than "a lot" or "many"`);
@@ -2077,9 +2366,23 @@ function lookupGlossary(query) {
 }
 
 function prettyTerm(s) {
-  // Capitalize each word; preserve known acronyms
-  const acronyms = new Set(['dcf','lbo','wacc','ebitda','cac','ltv','roas','siem','rest','sql','nosql','crispr','okrs','mvp','gd&t','fea','lcoe','esg']);
-  return s.split(' ').map(w => acronyms.has(w) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)).join(' ');
+  // Use a map (not a set) so we preserve canonical casing — "NoSQL" not "NOSQL",
+  // "GraphQL" not "GRAPHQL". Keep small connectors lowercase mid-phrase.
+  const canonical = {
+    'dcf':'DCF','lbo':'LBO','wacc':'WACC','ebitda':'EBITDA','cac':'CAC','ltv':'LTV',
+    'roas':'ROAS','siem':'SIEM','rest':'REST','sql':'SQL','nosql':'NoSQL','graphql':'GraphQL',
+    'crispr':'CRISPR','okrs':'OKRs','mvp':'MVP','gd&t':'GD&T','fea':'FEA','lcoe':'LCOE',
+    'esg':'ESG','api':'API','ml':'ML','nlp':'NLP','ehr':'EHR','fda':'FDA','hipaa':'HIPAA',
+    'gcp':'GCP','pcr':'PCR','irb':'IRB','seo':'SEO','sem':'SEM','cad':'CAD','crm':'CRM',
+    'erp':'ERP','wms':'WMS','tms':'TMS','scada':'SCADA','ghg':'GHG','epa':'EPA','leed':'LEED',
+    'ppa':'PPA','ats':'ATS','star':'STAR','cap':'CAP'
+  };
+  const lowerWords = new Set(['vs','of','and','or','the','a','an','for','to','in','on']);
+  return s.split(' ').map((w, i) => {
+    if (canonical[w]) return canonical[w];
+    if (i > 0 && lowerWords.has(w)) return w; // keep "vs" / "of" lowercase mid-phrase
+    return w[0].toUpperCase() + w.slice(1);
+  }).join(' ');
 }
 
 /* =========================================================
@@ -2092,15 +2395,10 @@ function computeAtsScore() {
   if (!state.resumeText || !state.role?.id) return null;
   const top5 = ATS_TOP5[state.role.id] || [];
   if (top5.length === 0) return null;
-  const lower = state.resumeText.toLowerCase();
   const matched = [];
   const missing = [];
   top5.forEach(kw => {
-    const safe = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = /^[a-z0-9]+$/i.test(kw)
-      ? new RegExp(`\\b${safe}\\b`, 'i')
-      : new RegExp(safe, 'i');
-    if (re.test(state.resumeText)) matched.push(kw);
+    if (keywordPresent(kw, state.resumeText)) matched.push(kw);
     else missing.push(kw);
   });
   const percent = Math.round((matched.length / top5.length) * 100);
