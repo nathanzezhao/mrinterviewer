@@ -421,6 +421,173 @@
 
   .nav-actions { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 
+  /* ---------- Side helper chatbot (definitions) ---------- */
+  .helper-fab {
+    position: fixed; bottom: 24px; right: 24px; z-index: 30;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-3));
+    color: #0b0d12; font-size: 28px; font-weight: 800;
+    border: none; cursor: pointer;
+    box-shadow: 6px 6px 16px var(--shadow-d), -6px -6px 16px var(--shadow-l), 0 0 28px rgba(244,114,182,0.35);
+    display: none; place-items: center;
+    animation: float 5s ease-in-out infinite;
+    transition: transform 0.2s ease;
+  }
+  .helper-fab:hover { transform: scale(1.08); }
+  .helper-fab.visible { display: grid; }
+  .helper-fab::after {
+    content: '?'; font-size: 26px;
+  }
+  .helper-fab .pulse-dot {
+    position: absolute; top: 8px; right: 8px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  }
+
+  .helper-panel {
+    position: fixed; bottom: 100px; right: 24px; z-index: 31;
+    width: 360px; max-width: calc(100vw - 32px);
+    max-height: 70vh; display: none; flex-direction: column;
+    background: var(--bg-soft); border-radius: 22px;
+    box-shadow: 8px 8px 28px var(--shadow-d), -4px -4px 14px var(--shadow-l), 0 0 0 1px rgba(244,114,182,0.2);
+    overflow: hidden;
+    animation: helperIn 0.32s cubic-bezier(.2,.9,.3,1.3);
+  }
+  .helper-panel.visible { display: flex; }
+  @keyframes helperIn { from { opacity: 0; transform: translateY(20px) scale(0.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .helper-head {
+    padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .helper-head .h-orb {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--accent-3), var(--accent-2) 70%);
+    box-shadow: 0 0 12px rgba(244,114,182,0.4);
+  }
+  .helper-head .h-title { font-weight: 700; font-size: 14px; }
+  .helper-head .h-sub { font-size: 11px; color: var(--text-dim); }
+  .helper-head .h-close {
+    margin-left: auto; background: none; border: none; color: var(--text-dim);
+    font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 8px;
+  }
+  .helper-head .h-close:hover { color: var(--text); background: var(--bg-darker); }
+
+  .helper-log {
+    flex: 1; padding: 14px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    font-size: 13px; line-height: 1.55;
+  }
+  .helper-log::-webkit-scrollbar { width: 5px; }
+  .helper-log::-webkit-scrollbar-thumb { background: var(--shadow-l); border-radius: 3px; }
+  .helper-msg {
+    padding: 10px 13px; border-radius: 14px; max-width: 88%;
+    animation: bubbleIn 0.3s ease;
+  }
+  .helper-bot {
+    align-self: flex-start;
+    background: linear-gradient(135deg, rgba(244,114,182,0.10), rgba(129,140,248,0.10));
+    border-bottom-left-radius: 4px;
+  }
+  .helper-user {
+    align-self: flex-end;
+    background: var(--bg-darker); color: var(--text);
+    border-bottom-right-radius: 4px;
+  }
+  .helper-msg b { color: var(--accent); }
+  .helper-msg .tip {
+    margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);
+    color: var(--text-dim); font-style: italic; font-size: 12px;
+  }
+
+  .helper-input {
+    padding: 10px; display: flex; gap: 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .helper-input input {
+    flex: 1; border: none; outline: none;
+    background: var(--bg-darker); color: var(--text);
+    border-radius: 10px; padding: 10px 12px; font-size: 13px;
+    font-family: inherit;
+    box-shadow: inset 3px 3px 6px var(--shadow-d), inset -3px -3px 6px var(--shadow-l);
+  }
+  .helper-input input:focus { box-shadow: inset 3px 3px 6px var(--shadow-d), inset -3px -3px 6px var(--shadow-l), 0 0 0 1px var(--accent-3); }
+  .helper-input button {
+    border: none; background: linear-gradient(135deg, var(--accent-3), var(--accent-2));
+    color: #0b0d12; font-weight: 700; font-size: 13px;
+    padding: 0 14px; border-radius: 10px; cursor: pointer;
+  }
+  .helper-suggestions {
+    padding: 0 14px 10px; display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .helper-suggestions .chip {
+    font-size: 11px; padding: 4px 10px; border-radius: 10px;
+    background: var(--bg-darker); color: var(--text-dim);
+    cursor: pointer; transition: all 0.15s ease;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .helper-suggestions .chip:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- ATS compatibility section ---------- */
+  .ats-section {
+    padding: 28px; margin: 24px 0;
+    background: linear-gradient(135deg, rgba(94,234,212,0.04), rgba(129,140,248,0.04));
+  }
+  .ats-section h3 {
+    font-size: 18px; font-weight: 800; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ats-section .ats-sub { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
+  .ats-bar-wrap {
+    display: flex; align-items: center; gap: 20px; margin-bottom: 22px;
+  }
+  .ats-bar-bg {
+    flex: 1; height: 14px; border-radius: 8px;
+    background: var(--bg-darker);
+    box-shadow: inset 3px 3px 6px var(--shadow-d), inset -3px -3px 6px var(--shadow-l);
+    overflow: hidden; position: relative;
+  }
+  .ats-bar-fill {
+    height: 100%; border-radius: 8px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    box-shadow: 0 0 14px rgba(94,234,212,0.5);
+    transition: width 1s cubic-bezier(.2,.9,.3,1);
+  }
+  .ats-bar-fill.warn { background: linear-gradient(90deg, #fbbf24, #f59e0b); box-shadow: 0 0 14px rgba(251,191,36,0.5); }
+  .ats-bar-fill.bad  { background: linear-gradient(90deg, #ef4444, #f97316); box-shadow: 0 0 14px rgba(239,68,68,0.5); }
+  .ats-percent {
+    font-size: 28px; font-weight: 900; min-width: 80px; text-align: right;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .ats-keywords-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px; margin-bottom: 18px;
+  }
+  .ats-kw {
+    padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ats-kw.match {
+    background: linear-gradient(135deg, rgba(94,234,212,0.12), rgba(34,197,94,0.10));
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1px rgba(94,234,212,0.3);
+  }
+  .ats-kw.miss {
+    background: rgba(239,68,68,0.06);
+    color: #f87171;
+    box-shadow: inset 0 0 0 1px rgba(239,68,68,0.2);
+  }
+  .ats-tips {
+    padding: 14px 18px; border-radius: 14px;
+    background: var(--bg-darker);
+    box-shadow: inset 3px 3px 6px var(--shadow-d), inset -3px -3px 6px var(--shadow-l);
+  }
+  .ats-tips h4 { font-size: 13px; color: var(--accent); margin-bottom: 8px; letter-spacing: 0.5px; }
+  .ats-tips ul { padding-left: 22px; line-height: 1.65; font-size: 13px; }
+  .ats-tips li { margin-bottom: 5px; }
+  .ats-tips li b { color: var(--text); }
+
   /* Utilities */
   .hidden { display: none !important; }
   @media (max-width: 720px) {
@@ -534,7 +701,9 @@
     </div>
     <div class="resume-wrap">
       <div class="encourage-banner">
-        💡 <b>Tip:</b> Uploading your resume lets the AI ask you about the projects, tools, and companies <em>you actually wrote down</em>. It's the difference between a generic mock and one that feels like a real interview.
+        💡 <b>Strongly recommended.</b> Uploading your resume unlocks two big things:
+        <span style="display:block; margin-top:8px;">→ <b>Personalized interview questions</b> — at least one question will pull directly from a project, tool, or experience on your resume.</span>
+        <span style="display:block; margin-top:4px;">→ <b>ATS compatibility report</b> — at the end you'll see how your resume scores against the 5 most-scanned-for keywords for this role, plus tips to improve it.</span>
       </div>
       <div class="drop-zone" id="drop-zone">
         <span class="upload-ico">📂</span>
@@ -580,6 +749,27 @@
         <button class="neu-btn" onclick="endInterviewEarly()">End Interview & See Feedback</button>
       </div>
     </div>
+
+    <!-- Side helper chatbot — floating panel for definition lookups during interview -->
+    <button class="helper-fab" id="helper-fab" onclick="toggleHelper()" title="Ask about a definition" aria-label="Open definition helper">
+      <span class="pulse-dot"></span>
+    </button>
+    <div class="helper-panel" id="helper-panel" role="dialog" aria-label="Definition helper">
+      <div class="helper-head">
+        <div class="h-orb"></div>
+        <div>
+          <div class="h-title">Definition Helper</div>
+          <div class="h-sub">Private — your interviewer can't see this</div>
+        </div>
+        <button class="h-close" onclick="toggleHelper()" aria-label="Close">×</button>
+      </div>
+      <div class="helper-log" id="helper-log"></div>
+      <div class="helper-suggestions" id="helper-suggestions"></div>
+      <div class="helper-input">
+        <input type="text" id="helper-input" placeholder="Ask: what is a DCF?" autocomplete="off"/>
+        <button onclick="askHelper()">Ask</button>
+      </div>
+    </div>
   </div>
 
   <!-- ============ SCREEN 7: FEEDBACK ============ -->
@@ -590,6 +780,10 @@
     </div>
     <div class="score-grid" id="score-grid"></div>
     <div class="neu feedback-block" id="overall-feedback"></div>
+
+    <!-- ATS resume-compatibility report (only renders when a resume was provided) -->
+    <div class="neu ats-section" id="ats-section" style="display:none;"></div>
+
     <h3 style="margin: 28px 0 14px; font-size: 18px;">Question-by-question breakdown</h3>
     <div id="qa-breakdown"></div>
     <div class="nav-actions">
@@ -870,6 +1064,108 @@ const KEYWORD_BANK = {
 };
 
 /* =========================================================
+   ATS-style top keywords — the 5 most-scanned-for terms per role.
+   Real ATS systems weight a small set of must-have keywords very heavily;
+   we mirror that by scoring resume against exactly these 5 per role.
+   ========================================================= */
+const ATS_TOP5 = {
+  // Tech
+  101: ['Python','JavaScript','SQL','React','AWS'],                      // SWE
+  102: ['Python','SQL','machine learning','statistics','Pandas'],         // DS/ML
+  103: ['roadmap','metrics','user research','A/B testing','stakeholder'], // PM
+  104: ['SIEM','firewall','penetration testing','network security','incident response'], // Cyber
+  // Finance
+  201: ['DCF','financial modeling','Excel','valuation','M&A'],
+  202: ['case interview','market sizing','client','strategy','MBA'],
+  203: ['financial modeling','Excel','forecasting','GAAP','variance analysis'],
+  204: ['Python','C++','statistics','probability','derivatives'],
+  // Health
+  301: ['clinical','patient','EHR','diagnosis','HIPAA'],
+  302: ['clinical trial','GCP','FDA','protocol','assay'],
+  303: ['epidemiology','biostatistics','SAS','public health','data analysis'],
+  304: ['PCR','CRISPR','assay','protocol','cell culture'],
+  // Engineering
+  401: ['CAD','SolidWorks','GD&T','FEA','manufacturing'],
+  402: ['AutoCAD','structural','codes','site','project management'],
+  403: ['circuit','PCB','SPICE','signal processing','MATLAB'],
+  404: ['aerodynamics','propulsion','MATLAB','controls','CAD'],
+  // Business
+  501: ['campaign','SEO','Google Analytics','brand','ROI'],
+  502: ['quota','pipeline','CRM','Salesforce','prospecting'],
+  503: ['CAC','LTV','A/B testing','ROAS','growth'],
+  504: ['brand strategy','positioning','consumer insight','launch','market research'],
+  // Media
+  601: ['Figma','user research','prototyping','wireframe','design system'],
+  602: ['Photoshop','Illustrator','typography','brand identity','InDesign'],
+  603: ['Premiere','After Effects','DaVinci','color grading','storytelling'],
+  604: ['Unity','Unreal','C#','optimization','gameplay'],
+  // Ops
+  701: ['Lean','Six Sigma','KPI','process improvement','SAP'],
+  702: ['demand planning','forecasting','SQL','SAP','inventory'],
+  703: ['logistics','TMS','routing','vendor management','SAP'],
+  // Gov
+  801: ['litigation','legal research','Westlaw','contract','client'],
+  802: ['policy analysis','regulatory','briefing','stakeholder','research'],
+  803: ['public policy','stakeholder','program management','budget','community'],
+  // Energy
+  901: ['energy markets','LCOE','forecasting','renewables','SQL'],
+  902: ['EPA','remediation','compliance','site assessment','regulatory'],
+  903: ['ESG','carbon','sustainability','GHG','reporting']
+};
+
+/* =========================================================
+   GLOSSARY — powers the side helper chatbot.
+   Keys are normalized lowercase phrases. Each entry has a short
+   plain-English definition and an "in interviews:" tactical note.
+   The lookup does fuzzy matching so "what's a DCF?" still hits "dcf".
+   ========================================================= */
+const GLOSSARY = {
+  // Tech
+  'big o': { def: 'Big O describes how an algorithm\'s runtime grows as input size grows. O(1) is constant, O(log n) is fast, O(n) is linear, O(n²) is slow.', tip: 'In interviews: always state your time AND space complexity after coding a solution.' },
+  'system design': { def: 'High-level architecture of a real-world service — picking databases, caches, queues, load balancers, and reasoning about scale, consistency, and failure.', tip: 'Cover: requirements → high-level diagram → data model → APIs → bottlenecks → tradeoffs.' },
+  'rest': { def: 'REST is an API style where you use HTTP verbs (GET, POST, PUT, DELETE) on resource URLs and return JSON.', tip: 'Know the difference between PUT (idempotent) vs POST (not idempotent).' },
+  'graphql': { def: 'GraphQL is an API style where the client specifies exactly what fields it wants in a single query, instead of getting fixed shapes back from REST endpoints.', tip: 'Pros: less over-fetching. Cons: harder to cache, more complex backend.' },
+  'sql vs nosql': { def: 'SQL databases (Postgres, MySQL) are relational with strict schemas and ACID transactions. NoSQL (MongoDB, DynamoDB) is schema-flexible, scales horizontally, but trades off consistency.', tip: 'Default to SQL unless you have a specific reason not to.' },
+  'cap theorem': { def: 'In a distributed system you can only pick 2 of: Consistency, Availability, Partition tolerance. Since network partitions happen, you really pick C-or-A.', tip: 'Banks pick C. Social feeds pick A.' },
+  'bias variance tradeoff': { def: 'Bias = error from oversimplified models (underfitting). Variance = error from over-complex models (overfitting). You\'re always balancing the two.', tip: 'High training accuracy + low test accuracy = high variance. Low both = high bias.' },
+  'overfitting': { def: 'When a model memorizes the training data and fails on new data.', tip: 'Mitigate with regularization, more data, simpler models, cross-validation.' },
+  'precision recall': { def: 'Precision = of the things I predicted positive, how many actually were? Recall = of the things actually positive, how many did I catch?', tip: 'Spam filter optimizes precision. Cancer screening optimizes recall.' },
+  'a/b testing': { def: 'Randomly split users into two groups, show each a different version, measure which performs better.', tip: 'Watch for: sample size, statistical significance, novelty effects, and segmentation.' },
+  // Finance
+  'dcf': { def: 'Discounted Cash Flow — value a company by projecting its future cash flows and discounting them back to today using WACC.', tip: 'Walk through: project FCF → terminal value → discount at WACC → sum to enterprise value → subtract net debt for equity value.' },
+  'wacc': { def: 'Weighted Average Cost of Capital — the blended cost of debt and equity a company pays for its capital, weighted by their share of the capital structure.', tip: 'Used as the discount rate in a DCF.' },
+  'lbo': { def: 'Leveraged Buyout — buying a company mostly with borrowed money, paying off the debt with the company\'s cash flow over 5–7 years.', tip: 'Returns come from debt paydown, EBITDA growth, and multiple expansion.' },
+  'ebitda': { def: 'Earnings Before Interest, Taxes, Depreciation, Amortization — a proxy for cash operating profit.', tip: 'Bankers love it because it strips out capital structure and accounting choices.' },
+  'free cash flow': { def: 'Cash a company generates after operating expenses and capital expenditures. The cash actually available to investors.', tip: 'FCF = EBITDA – Δ working capital – CapEx – taxes.' },
+  'enterprise value': { def: 'Value of the entire business to all capital providers. EV = Equity Value + Debt – Cash.', tip: 'Used because it\'s capital-structure-neutral for comparing companies.' },
+  'beta': { def: 'How much a stock moves relative to the market. Beta of 1.5 means it moves 50% more than the market on average.', tip: 'Used in CAPM to estimate cost of equity.' },
+  'three statement model': { def: 'A linked Excel model with the income statement, balance sheet, and cash flow statement that all flow into each other.', tip: 'The classic IB modeling test.' },
+  // Consulting
+  'case interview': { def: 'A business problem ("Our client\'s profits are falling — why?") solved out loud with structured frameworks in 25–40 minutes.', tip: 'Use a clear framework (profitability, market entry, M&A) but customize it to the case — don\'t rotely apply.' },
+  'market sizing': { def: 'Estimate the size of a market from first principles ("How many piano tuners in Chicago?").', tip: 'Top-down (population × penetration × spend) or bottom-up (units × price). State assumptions out loud.' },
+  // PM
+  'okrs': { def: 'Objectives and Key Results — a goal-setting framework. Objective is qualitative ("Win in mobile"), Key Results are 3–5 measurable outcomes.', tip: 'Strong KRs are outcome-based, not output-based.' },
+  'mvp': { def: 'Minimum Viable Product — the smallest version of a product that delivers real value and lets you learn whether the idea works.', tip: 'MVP is about learning, not just shipping fast.' },
+  'product sense': { def: 'Intuition for what users want and what makes products great. Tested in "design a product for X" interview questions.', tip: 'Always start with: who is the user, what\'s the problem, what\'s the goal — before jumping to solutions.' },
+  // ML/Cyber
+  'crispr': { def: 'A gene-editing technology that uses a guide RNA to target a specific DNA sequence and Cas9 enzyme to cut it.', tip: 'In interviews: be ready to discuss off-target effects and delivery methods.' },
+  'siem': { def: 'Security Information and Event Management — software that aggregates logs from across an org and alerts on suspicious patterns.', tip: 'Examples: Splunk, QRadar, Sentinel.' },
+  'zero trust': { def: 'A security model that assumes no user or device is trusted by default — every request is verified, even from inside the network.', tip: 'Contrast with old "castle and moat" perimeter security.' },
+  'phishing': { def: 'Social-engineering attack where attackers pose as trusted senders to trick users into clicking links or revealing credentials.', tip: 'Spear phishing = targeted at one person. Whaling = targeted at executives.' },
+  // Marketing/Sales/Growth
+  'cac': { def: 'Customer Acquisition Cost — total spend to acquire one new customer.', tip: 'CAC = total sales+marketing spend ÷ number of new customers in that period.' },
+  'ltv': { def: 'Lifetime Value — total revenue a customer generates over their entire relationship with you.', tip: 'Healthy SaaS: LTV/CAC > 3, payback period < 12 months.' },
+  'roas': { def: 'Return on Ad Spend — revenue generated per dollar of ad spend.', tip: 'ROAS of 4 means $4 revenue per $1 spent. Different from ROI which subtracts cost.' },
+  'star method': { def: 'Behavioral interview framework: Situation, Task, Action, Result. Structure every behavioral answer this way.', tip: 'Spend 20% on Situation/Task, 60% on Action (use "I" not "we"), 20% on a quantified Result.' },
+  // Engineering
+  'gd&t': { def: 'Geometric Dimensioning and Tolerancing — a symbolic language on engineering drawings that defines acceptable variation in form, size, and orientation.', tip: 'Critical when parts must mate with parts from a different supplier.' },
+  'fea': { def: 'Finite Element Analysis — a simulation method that breaks a complex part into thousands of small elements to predict stress, deformation, heat flow, etc.', tip: 'Garbage in, garbage out — boundary conditions matter more than mesh density.' },
+  // Energy
+  'lcoe': { def: 'Levelized Cost of Energy — the per-MWh cost of building and running a power plant, averaged over its lifetime.', tip: 'Used to compare wildly different energy sources (solar vs nuclear vs gas) on cost.' },
+  'esg': { def: 'Environmental, Social, Governance — a framework for evaluating companies on non-financial sustainability dimensions.', tip: 'Scope 1/2/3 emissions are the most-asked-about ESG metric.' }
+};
+
+/* =========================================================
    STATE + NAVIGATION
    ========================================================= */
 const SCREENS = ['hero','industry','role','experience','resume','interview','feedback'];
@@ -898,6 +1194,18 @@ function goTo(screen) {
     case 'industry': renderIndustries(); break;
     case 'role':     renderRoles();      break;
     case 'resume':   focusResumeScreen(); break;
+  }
+
+  // Show the floating helper FAB only on the interview screen
+  const fab = document.getElementById('helper-fab');
+  const panel = document.getElementById('helper-panel');
+  if (fab && panel) {
+    if (screen === 'interview') {
+      fab.classList.add('visible');
+    } else {
+      fab.classList.remove('visible');
+      panel.classList.remove('visible');
+    }
   }
 }
 
@@ -1111,22 +1419,40 @@ function scanKeywords(text) {
    ========================================================= */
 function startInterview(skipResume) {
   if (skipResume) { state.resumeText = ''; state.keywords = []; }
-  // Build question list — start with warm-up, then mix in personalized resume question if keywords found
+
+  // Build a heavily resume-driven question list when a resume is present.
+  // Slot plan (5 questions total):
+  //   1. Warm-up behavioral
+  //   2. RESUME-1: anchored on top resume keyword(s) or a phrase pulled from the resume
+  //   3. Core technical / case
+  //   4. RESUME-2 (only if resume has substance): drill into a specific project mention
+  //   5. Closing behavioral
   const baseQs = (QUESTIONS[state.role.id] || []).slice();
   const final = [];
+  const hasResume = !!state.resumeText && state.resumeText.length > 60;
+
   // 1. Warm-up
   final.push(baseQs.find(q => q.cat==='behavioral') || baseQs[0]);
-  // 2. Resume-personalized question
-  if (state.keywords.length >= 2) {
-    const kw1 = state.keywords[0], kw2 = state.keywords[1];
-    final.push({
-      q: `I noticed you've worked with ${kw1} and ${kw2}. Pick the project where these mattered most and walk me through your specific contribution.`,
-      cat: 'personalized'
-    });
+
+  // 2. Guaranteed resume question (always fires when resume exists)
+  if (hasResume) {
+    final.push(generateResumeQuestion('primary'));
   }
-  // 3. Core technical
-  baseQs.filter(q => q.cat !== 'behavioral' && !final.includes(q)).slice(0, 3).forEach(q => final.push(q));
-  // 4. Closing behavioral
+
+  // 3. Core technical / case (skip behavioral, skip already-included)
+  const coreNeeded = hasResume ? 1 : 2;
+  baseQs.filter(q => q.cat !== 'behavioral' && !final.includes(q)).slice(0, coreNeeded).forEach(q => final.push(q));
+
+  // 4. Second resume drill (only if resume content is rich enough)
+  if (hasResume && (state.keywords.length >= 2 || extractResumePhrases().length >= 1)) {
+    final.push(generateResumeQuestion('secondary'));
+  } else {
+    // Pad with another technical/case if no second resume question
+    const extra = baseQs.filter(q => q.cat !== 'behavioral' && !final.includes(q))[0];
+    if (extra) final.push(extra);
+  }
+
+  // 5. Closing behavioral
   const closing = baseQs.filter(q => q.cat === 'behavioral').slice(-1)[0];
   if (closing && !final.includes(closing)) final.push(closing);
 
@@ -1139,7 +1465,80 @@ function startInterview(skipResume) {
   startTimer();
   document.getElementById('chat-area').innerHTML = '';
   document.getElementById('user-input').value = '';
+  // Reset side helper too
+  const helperLog = document.getElementById('helper-log');
+  if (helperLog) helperLog.innerHTML = `<div class="helper-msg helper-bot">👋 Stuck on a term? Ask me — e.g. <i>"what is a DCF?"</i>, <i>"explain bias-variance"</i>, <i>"what's STAR?"</i>. I won't show your interviewer.</div>`;
   setTimeout(() => askNextQuestion(true), 500);
+}
+
+/* Pull short, interesting phrases from the resume that sound like project
+   or experience callouts. Used as a fallback when keyword detection misses. */
+function extractResumePhrases() {
+  const t = state.resumeText || '';
+  if (!t) return [];
+  // Look for "verb + noun" patterns common on resumes: "Led/Built/Designed/Shipped X"
+  const re = /\b(?:led|built|designed|developed|shipped|launched|owned|drove|created|implemented|deployed|managed|engineered|architected|prototyped|analyzed|optimized)\b[^.\n]{6,80}/gi;
+  const matches = (t.match(re) || []).map(s => s.replace(/\s+/g,' ').trim()).slice(0, 5);
+  return [...new Set(matches)];
+}
+
+/* Build a resume-personalized question. mode = 'primary' | 'secondary' */
+function generateResumeQuestion(mode) {
+  const kws = state.keywords;
+  const phrases = extractResumePhrases();
+
+  if (mode === 'primary') {
+    // Prefer 2-keyword anchor; fall back to 1 keyword; fall back to phrase; fall back to generic
+    if (kws.length >= 2) {
+      return {
+        q: `Looking at your resume, I see you've worked with <b>${kws[0]}</b> and <b>${kws[1]}</b>. Pick the single project where both mattered most and walk me through your specific contribution — what you owned, what was hard, and the outcome.`,
+        cat: 'personalized'
+      };
+    }
+    if (kws.length === 1) {
+      return {
+        q: `Your resume mentions <b>${kws[0]}</b>. Tell me about the most challenging thing you did with it — and what you'd do differently if you started that project today.`,
+        cat: 'personalized'
+      };
+    }
+    if (phrases.length >= 1) {
+      const sample = phrases[0].replace(/^./, c => c.toLowerCase());
+      return {
+        q: `On your resume you wrote that you ${sample}. Walk me through that in detail — context, what you specifically did, and the measurable result.`,
+        cat: 'personalized'
+      };
+    }
+    // Resume exists but is light on detail
+    return {
+      q: `Pick the single most impactful project on your resume and walk me through it: the problem, your specific role, what you built, and the outcome.`,
+      cat: 'personalized'
+    };
+  }
+
+  // Secondary — drill on something different
+  if (kws.length >= 3) {
+    return {
+      q: `One more from your resume: tell me about a time you used <b>${kws[2]}</b> in production. Where did things go wrong, and how did you debug or recover?`,
+      cat: 'personalized'
+    };
+  }
+  if (phrases.length >= 2) {
+    const sample = phrases[1].replace(/^./, c => c.toLowerCase());
+    return {
+      q: `You also mentioned that you ${sample} — what was the most surprising lesson from that work?`,
+      cat: 'personalized'
+    };
+  }
+  if (kws.length >= 1) {
+    return {
+      q: `Going back to <b>${kws[0]}</b> on your resume — if I gave you 10x the budget and team for that project, what would you have built differently?`,
+      cat: 'personalized'
+    };
+  }
+  return {
+    q: `Pick a different project from your resume than the one you just discussed. What\'s one decision you made on it that you\'d defend in an architecture review?`,
+    cat: 'personalized'
+  };
 }
 
 function startTimer() {
@@ -1437,6 +1836,9 @@ function renderFeedback(scores, avg) {
     ${buildOverallSummary(scores)}
   `;
 
+  // ATS resume-compatibility report (renders only if a resume was provided)
+  renderAtsSection();
+
   document.getElementById('qa-breakdown').innerHTML = state.responses.map((r,i) => `
     <div class="qa-row">
       <div class="q">Q${i+1}. ${escapeHtml(r.question)} <span class="rating-pill">${r.rating}/10</span></div>
@@ -1557,6 +1959,219 @@ function truncate(s, n) {
   return s.length > n ? s.slice(0, n).trim() + '…' : s;
 }
 
+/* =========================================================
+   SIDE HELPER CHATBOT
+   A private definition lookup the user can pop open during
+   the interview. Backed by the GLOSSARY constant — does fuzzy
+   matching so "what's a DCF?" → 'dcf', "explain bias variance"
+   → 'bias variance tradeoff', etc. Falls back gracefully when
+   nothing matches.
+   ========================================================= */
+function toggleHelper() {
+  const panel = document.getElementById('helper-panel');
+  const fab = document.getElementById('helper-fab');
+  const isOpen = panel.classList.toggle('visible');
+  fab.style.display = isOpen ? 'none' : 'grid';
+  if (isOpen) {
+    setTimeout(() => document.getElementById('helper-input').focus(), 250);
+    renderHelperSuggestions();
+  } else {
+    fab.classList.add('visible');
+  }
+}
+
+/* Render category-aware suggestion chips so the user knows what they can ask.
+   Pulls 3-4 relevant glossary keys based on the current role/industry. */
+function renderHelperSuggestions() {
+  const container = document.getElementById('helper-suggestions');
+  if (!container) return;
+  const roleId = state.role?.id;
+  // Curate per-role hints that map to actual glossary entries
+  const hintsByRole = {
+    101: ['big o', 'system design', 'rest', 'sql vs nosql'],
+    102: ['bias variance tradeoff', 'overfitting', 'precision recall', 'a/b testing'],
+    103: ['okrs', 'mvp', 'product sense', 'a/b testing'],
+    104: ['siem', 'zero trust', 'phishing'],
+    201: ['dcf', 'wacc', 'lbo', 'ebitda'],
+    202: ['case interview', 'market sizing'],
+    203: ['three statement model', 'free cash flow', 'ebitda'],
+    204: ['beta', 'wacc', 'free cash flow'],
+    302: ['crispr'],
+    304: ['crispr'],
+    401: ['gd&t', 'fea'],
+    501: ['cac', 'ltv', 'roas', 'a/b testing'],
+    502: ['cac', 'ltv'],
+    503: ['cac', 'ltv', 'roas', 'a/b testing'],
+    504: ['cac', 'ltv'],
+    901: ['lcoe', 'esg'],
+    903: ['esg', 'lcoe']
+  };
+  const fallback = ['star method', 'a/b testing'];
+  const hints = (hintsByRole[roleId] || fallback).slice(0, 4);
+  container.innerHTML = hints.map(h =>
+    `<span class="chip" onclick="askHelperFor('${h}')">${h}</span>`
+  ).join('');
+}
+
+function askHelperFor(term) {
+  const input = document.getElementById('helper-input');
+  input.value = `What is ${term}?`;
+  askHelper();
+}
+
+function askHelper() {
+  const input = document.getElementById('helper-input');
+  const log = document.getElementById('helper-log');
+  const q = input.value.trim();
+  if (!q) return;
+  appendHelperMsg(q, 'user');
+  input.value = '';
+  // Slight delay for "thinking" feel
+  setTimeout(() => {
+    const result = lookupGlossary(q);
+    if (result) {
+      appendHelperMsg(`<b>${result.term}</b>: ${result.def}<div class="tip">💡 ${result.tip}</div>`, 'bot');
+    } else {
+      appendHelperMsg(`I don't have that one in my glossary yet. Try a different phrasing — or click one of the suggested chips below. Also: I focus on common interview terms, not company-specific jargon.`, 'bot');
+    }
+  }, 350);
+}
+
+function appendHelperMsg(html, who) {
+  const log = document.getElementById('helper-log');
+  const msg = document.createElement('div');
+  msg.className = `helper-msg helper-${who}`;
+  msg.innerHTML = html;
+  log.appendChild(msg);
+  log.scrollTop = log.scrollHeight;
+}
+
+/* Fuzzy glossary lookup: strips common interrogatives, then scores each
+   glossary key by token overlap. Returns the best-scoring entry above
+   a small threshold; null otherwise. */
+function lookupGlossary(query) {
+  const norm = query.toLowerCase()
+    .replace(/[^a-z0-9 &/]/g, ' ')
+    .replace(/\b(what|whats|what's|is|the|a|an|are|how|do|you|explain|define|definition|of|tell|me|about|please|can|in|on|for)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!norm) return null;
+
+  // Direct hit
+  if (GLOSSARY[norm]) return { term: prettyTerm(norm), ...GLOSSARY[norm] };
+
+  // Token overlap scoring
+  const qTokens = norm.split(' ').filter(t => t.length >= 2);
+  let best = null, bestScore = 0;
+  for (const key of Object.keys(GLOSSARY)) {
+    const kTokens = key.split(' ');
+    const overlap = qTokens.filter(t => kTokens.some(kt => kt.includes(t) || t.includes(kt))).length;
+    // Prefer keys whose tokens are mostly in the query
+    const coverage = overlap / Math.max(kTokens.length, 1);
+    const score = overlap + coverage;
+    if (score > bestScore) { bestScore = score; best = key; }
+  }
+  // Threshold: at least one strong overlap
+  if (best && bestScore >= 1) return { term: prettyTerm(best), ...GLOSSARY[best] };
+  return null;
+}
+
+function prettyTerm(s) {
+  // Capitalize each word; preserve known acronyms
+  const acronyms = new Set(['dcf','lbo','wacc','ebitda','cac','ltv','roas','siem','rest','sql','nosql','crispr','okrs','mvp','gd&t','fea','lcoe','esg']);
+  return s.split(' ').map(w => acronyms.has(w) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)).join(' ');
+}
+
+/* =========================================================
+   ATS COMPATIBILITY SCORER
+   Compares the user's resume keywords against the 5 most-scanned-for
+   terms for the chosen role (ATS_TOP5). Returns a 0-100 percent match
+   plus matched/missing arrays and tailored tips.
+   ========================================================= */
+function computeAtsScore() {
+  if (!state.resumeText || !state.role?.id) return null;
+  const top5 = ATS_TOP5[state.role.id] || [];
+  if (top5.length === 0) return null;
+  const lower = state.resumeText.toLowerCase();
+  const matched = [];
+  const missing = [];
+  top5.forEach(kw => {
+    const safe = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = /^[a-z0-9]+$/i.test(kw)
+      ? new RegExp(`\\b${safe}\\b`, 'i')
+      : new RegExp(safe, 'i');
+    if (re.test(state.resumeText)) matched.push(kw);
+    else missing.push(kw);
+  });
+  const percent = Math.round((matched.length / top5.length) * 100);
+  return { percent, matched, missing, top5 };
+}
+
+function renderAtsSection() {
+  const section = document.getElementById('ats-section');
+  if (!section) return;
+  const ats = computeAtsScore();
+  if (!ats) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  // Color-code the bar
+  let cls = '';
+  if (ats.percent < 40) cls = 'bad';
+  else if (ats.percent < 70) cls = 'warn';
+
+  // Verdict
+  let verdict;
+  if (ats.percent >= 80) verdict = `Strong ATS match. Most resume scanners would pass this through.`;
+  else if (ats.percent >= 60) verdict = `Decent match — you'd survive most screens but you're leaving signal on the table.`;
+  else if (ats.percent >= 40) verdict = `Borderline. Many ATS systems filter below 50% keyword match — this needs work.`;
+  else verdict = `High risk of being filtered out before a human sees your resume. The fixes below will move you fast.`;
+
+  // Tailored tips
+  const tips = [];
+  if (ats.missing.length > 0) {
+    tips.push(`Add the missing terms (<b>${ats.missing.join(', ')}</b>) where they're truthful — in the Skills section, project bullets, or summary line. Don't fake it.`);
+  }
+  if (ats.matched.length > 0 && ats.matched.length < ats.top5.length) {
+    tips.push(`Your matched keywords (<b>${ats.matched.join(', ')}</b>) should appear at least <b>twice</b> each — once in Skills and once in a project bullet showing real usage.`);
+  }
+  if (ats.percent < 60) {
+    tips.push(`Mirror the exact phrasing from the job description. ATS systems do literal string matching — "ML" and "machine learning" don't always count as the same hit.`);
+  }
+  tips.push(`Place the most important keywords in the <b>top third</b> of your resume (summary + most recent role). ATS systems weight that section more heavily.`);
+  if (ats.percent >= 60) {
+    tips.push(`You're in good shape on keywords — now focus on quantifying impact. ATS gets you past the screen; numbers get you the interview.`);
+  }
+
+  section.innerHTML = `
+    <h3>📋 ATS Resume Compatibility <span style="font-size:12px; padding: 3px 10px; border-radius:8px; background: var(--bg-darker); color: var(--text-dim); font-weight:600; letter-spacing:0.5px;">${state.role.name}</span></h3>
+    <div class="ats-sub">How a typical Applicant Tracking System would score your resume against the 5 most-scanned-for keywords for this role.</div>
+
+    <div class="ats-bar-wrap">
+      <div class="ats-bar-bg">
+        <div class="ats-bar-fill ${cls}" style="width:${ats.percent}%"></div>
+      </div>
+      <div class="ats-percent">${ats.percent}%</div>
+    </div>
+    <div style="margin-bottom: 18px; font-size: 14px;">${verdict}</div>
+
+    <div style="font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px;">Top 5 Keywords for ${state.role.name}</div>
+    <div class="ats-keywords-grid">
+      ${ats.top5.map(kw => {
+        const isMatch = ats.matched.includes(kw);
+        return `<div class="ats-kw ${isMatch ? 'match' : 'miss'}">${isMatch ? '✓' : '✗'} ${kw}</div>`;
+      }).join('')}
+    </div>
+
+    <div class="ats-tips">
+      <h4>💡 How to improve your ATS score</h4>
+      <ul>${tips.map(t => `<li>${t}</li>`).join('')}</ul>
+    </div>
+  `;
+}
+
 function scoreCard(label, score) {
   return `
     <div class="neu score-card">
@@ -1599,6 +2214,11 @@ function resetAll() {
 /* Keyboard: Enter to send (Shift+Enter for newline) */
 document.getElementById('user-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAnswer(); }
+});
+
+/* Helper bot — Enter to ask */
+document.getElementById('helper-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); askHelper(); }
 });
 
 /* =========================================================
